@@ -1,0 +1,38 @@
+Software Engineer
+
+Company:
+Google
+
+Requirements:
+
+Python
+
+SQL
+
+FastAPI
+
+Git
+
+Experience:
+
+2+ years
+
+Education:
+
+Bachelor's Degree
+
+Responsibilities:
+
+Develop REST APIs
+
+Work with databases
+
+Collaborate with frontend developers
+
+Employment Type:
+
+Full Time
+
+Location:
+
+Hyderabad

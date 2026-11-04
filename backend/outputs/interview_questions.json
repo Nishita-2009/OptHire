@@ -1,0 +1,397 @@
+{
+    "candidate_level": "Entry-Level / Student Trainee",
+    "target_role": "Software Engineer (Google)",
+    "estimated_interview_duration": "70 minutes",
+    "overall_interview_difficulty": "Medium",
+    "interview_strategy": "Given the significant mismatch between the candidate's current experience/education level and the 'Software Engineer' role requiring 2+ years of experience, this interview is designed to assess potential rather than immediate fit. The strategy focuses on: \n1.  **Validating Foundational Strengths:** Deep diving into the candidate's listed skills (Python, DSA, Web fundamentals) and projects to confirm their understanding and practical application. \n2.  **Assessing Learning Aptitude:** Probing into their 'Consistent Learning' and 'Adaptability' skills, especially through resume and behavioral questions, to understand their motivation and approach to acquiring new knowledge. \n3.  **Evaluating Self-Awareness & Growth Mindset:** Using 'missing-skill' questions to gauge their awareness of the required skills (SQL, FastAPI, Git) and their proactive plan for learning them, rather than expecting existing proficiency. \n4.  **Understanding Career Aspirations:** HR questions will clarify their realistic career goals and expectations, acknowledging their current student status. \nThis structure aims to identify a high-potential individual who, while not ready for this specific role, might be a strong candidate for future entry-level or internship opportunities, aligning with the ATS recommendation for such roles.",
+    "question_distribution": {
+        "technical": 5,
+        "coding": 3,
+        "resume_based": 3,
+        "project_based": 3,
+        "missing_skill": 2,
+        "behavioral": 3,
+        "hr": 2,
+        "total": 21
+    },
+    "technical_questions": [
+        {
+            "question_id": "TECH_01",
+            "question": "In Python, you've worked with core programming concepts. Can you explain the difference between a list and a tuple, and when you would choose one over the other for a specific use case?",
+            "difficulty": "Easy",
+            "purpose": "Assess foundational Python data structure understanding and ability to articulate practical application.",
+            "expected_answer_points": [
+                "Lists are mutable (can be changed after creation), tuples are immutable (cannot be changed).",
+                "Lists are defined with square brackets [], tuples with parentheses ().",
+                "Use lists for collections of items that might change (e.g., a queue of tasks, a dynamic shopping cart).",
+                "Use tuples for fixed collections of items (e.g., coordinates, database records, function return values where order and immutability are important)."
+            ],
+            "evaluation_criteria": [
+                "Clarity and accuracy of definitions.",
+                "Correct identification of mutability/immutability.",
+                "Provision of relevant and distinct use cases for each."
+            ]
+        },
+        {
+            "question_id": "TECH_02",
+            "question": "You've listed Data Structures & Algorithms. Can you describe a common searching algorithm like Binary Search? What are its prerequisites, and what is its time complexity?",
+            "difficulty": "Medium",
+            "purpose": "Evaluate understanding of fundamental algorithms, their efficiency, and preconditions.",
+            "expected_answer_points": [
+                "Binary Search is an efficient algorithm for finding an item from a sorted list of items.",
+                "It works by repeatedly dividing the search interval in half.",
+                "Prerequisite: The data structure (typically an array or list) must be sorted.",
+                "Time Complexity: O(log n) in the worst, average, and best cases, due to halving the search space in each step."
+            ],
+            "evaluation_criteria": [
+                "Correct explanation of how Binary Search works.",
+                "Accurate identification of the sorted data prerequisite.",
+                "Correct statement of time complexity and a brief justification."
+            ]
+        },
+        {
+            "question_id": "TECH_03",
+            "question": "Your 'Responsive Personal Website' project involved HTML and CSS. How did you ensure your website was responsive across different screen sizes, and what CSS techniques did you primarily use?",
+            "difficulty": "Medium",
+            "purpose": "Assess practical application of responsive design principles and specific CSS techniques.",
+            "expected_answer_points": [
+                "Used CSS Media Queries to apply different styles based on screen width (e.g., @media screen and (max-width: 768px)).",
+                "Employed flexible units like percentages (%), em, rem, or viewport units (vw, vh) for widths, heights, and font sizes instead of fixed pixels.",
+                "Utilized Flexbox or CSS Grid for layout management to create adaptable content blocks.",
+                "Implemented fluid images (max-width: 100%; height: auto;) to scale with their containers."
+            ],
+            "evaluation_criteria": [
+                "Specific mention of media queries.",
+                "Understanding and application of flexible units.",
+                "Knowledge of modern layout techniques (Flexbox/Grid).",
+                "Ability to explain how these techniques contribute to responsiveness."
+            ]
+        },
+        {
+            "question_id": "TECH_04",
+            "question": "For your personal website, you mentioned using JavaScript for 'basic interactivity'. Can you give an example of a specific interactive feature you implemented and explain the JavaScript code or logic behind it?",
+            "difficulty": "Easy",
+            "purpose": "Gauge practical JavaScript knowledge and ability to explain code logic.",
+            "expected_answer_points": [
+                "Example: A navigation menu that toggles open/closed on smaller screens.",
+                "Logic: Select the menu button and the navigation element using document.querySelector().",
+                "Add an event listener (e.g., 'click') to the menu button.",
+                "Inside the event handler, toggle a CSS class (e.g., 'active' or 'open') on the navigation element to change its display or position."
+            ],
+            "evaluation_criteria": [
+                "Clear description of an interactive feature.",
+                "Correct identification of DOM manipulation or event handling concepts.",
+                "Ability to articulate the basic JavaScript logic involved."
+            ]
+        },
+        {
+            "question_id": "TECH_05",
+            "question": "You've listed 'Debugging' as a skill. Describe a challenging bug you encountered in one of your Python projects. How did you approach debugging it, and what was the resolution?",
+            "difficulty": "Medium",
+            "purpose": "Assess problem-solving methodology, debugging skills, and ability to learn from errors.",
+            "expected_answer_points": [
+                "Description of a specific bug (e.g., incorrect output, runtime error, logical flaw).",
+                "Debugging approach: Reproducing the bug, isolating the problematic code section, using print statements or a debugger (e.g., pdb), checking variable values at different stages.",
+                "Hypothesizing potential causes and testing them.",
+                "Resolution: Identifying the root cause (e.g., off-by-one error, incorrect data type, misunderstanding of a function's behavior) and implementing the fix.",
+                "Lesson learned: Importance of testing, careful variable naming, understanding library functions deeply."
+            ],
+            "evaluation_criteria": [
+                "Clear articulation of the bug and its impact.",
+                "Demonstration of a systematic debugging process.",
+                "Identification of the root cause and effective resolution.",
+                "Reflection on lessons learned from the experience."
+            ]
+        }
+    ],
+    "coding_questions": [
+        {
+            "question_id": "CODE_01",
+            "question": "Write a Python function that takes a string as input and returns the string with all vowels removed. For example, 'hello' should return 'hll'.",
+            "difficulty": "Easy",
+            "purpose": "Test basic Python string manipulation, loops, and conditional logic.",
+            "expected_answer_points": [
+                "Define a set or list of vowels (both lowercase and uppercase).",
+                "Iterate through the input string.",
+                "For each character, check if it is in the vowel set/list.",
+                "If not a vowel, append it to a new string or list of characters.",
+                "Join the characters to form the final string."
+            ],
+            "evaluation_criteria": [
+                "Correctness of the function's output.",
+                "Efficiency of the solution (e.g., using a set for vowel lookup).",
+                "Readability and clarity of the code.",
+                "Handling of edge cases (empty string, string with only vowels/no vowels, case-insensitivity)."
+            ]
+        },
+        {
+            "question_id": "CODE_02",
+            "question": "Given a list of integers, write a Python function to find the second largest number in the list. Assume the list will always contain at least two distinct numbers.",
+            "difficulty": "Medium",
+            "purpose": "Assess array traversal, comparison logic, and handling simple edge cases.",
+            "expected_answer_points": [
+                "Method 1 (Sorting): Sort the list in descending order and return the element at index 1. (Less efficient, O(N log N)).",
+                "Method 2 (Two Pointers/Iteration): Initialize two variables, 'largest' and 'second_largest', to negative infinity or the first two distinct elements.",
+                "Iterate through the list: if current element > largest, update second_largest = largest, largest = current. Else if current element > second_largest and current element != largest, update second_largest = current. (More efficient, O(N)).",
+                "Handle duplicates by ensuring current element is not equal to largest when updating second_largest."
+            ],
+            "evaluation_criteria": [
+                "Correctness of the function's output.",
+                "Efficiency of the chosen approach (O(N) preferred).",
+                "Ability to handle distinct numbers and potential duplicates gracefully.",
+                "Code clarity and logical flow."
+            ]
+        },
+        {
+            "question_id": "CODE_03",
+            "question": "Write a Python function that checks if a given number is a prime number. A prime number is a natural number greater than 1 that has no positive divisors other than 1 and itself.",
+            "difficulty": "Medium",
+            "purpose": "Test understanding of mathematical logic and efficient iteration.",
+            "expected_answer_points": [
+                "Handle edge cases: numbers less than or equal to 1 are not prime.",
+                "Number 2 is prime.",
+                "For numbers greater than 2, check divisibility from 2 up to the square root of the number (inclusive).",
+                "If any number in this range divides the input number evenly, it's not prime.",
+                "If no divisors are found, the number is prime."
+            ],
+            "evaluation_criteria": [
+                "Correctness of the prime number check.",
+                "Efficiency of the algorithm (e.g., iterating up to sqrt(n)).",
+                "Proper handling of edge cases (0, 1, 2, negative numbers if considered).",
+                "Code readability and logical structure."
+            ]
+        }
+    ],
+    "resume_based_questions": [
+        {
+            "question_id": "RESUME_01",
+            "question": "You're pursuing a BSc in Computer Science from BITS Pilani Online while also undergoing the NIAT Skill Program. What motivated you to choose this dual approach to your education and skill development, and how do you manage your time effectively between them?",
+            "difficulty": "Easy",
+            "purpose": "Understand their drive, commitment to learning, and time management skills.",
+            "expected_answer_points": [
+                "Motivation: Desire for practical, hands-on skills alongside theoretical academic knowledge; accelerating learning; gaining industry-relevant experience early.",
+                "Time Management: Structured schedule, prioritizing tasks, setting clear goals for each program, leveraging online flexibility, self-discipline, avoiding procrastination."
+            ],
+            "evaluation_criteria": [
+                "Clarity and sincerity of motivation.",
+                "Demonstration of a structured and realistic approach to time management.",
+                "Evidence of self-discipline and proactive learning."
+            ]
+        },
+        {
+            "question_id": "RESUME_02",
+            "question": "As a 'Student Trainee' at the NIAT Skill Program, you mentioned 'building strong programming fundamentals' and 'developing problem-solving and logical thinking skills'. Can you give a specific example of how the NIAT program has helped you significantly improve in one of these areas?",
+            "difficulty": "Medium",
+            "purpose": "Gauge the depth of their learning experience and ability to articulate specific growth.",
+            "expected_answer_points": [
+                "Specific example: A particular coding challenge, a complex problem set, or a beginner-level project within NIAT.",
+                "Description of the problem/task and initial difficulties.",
+                "Explanation of the steps taken to overcome it, guided by NIAT's training (e.g., structured problem-solving techniques, mentor feedback, specific exercises).",
+                "Articulation of how this experience directly led to improved programming fundamentals or logical thinking."
+            ],
+            "evaluation_criteria": [
+                "Specificity and relevance of the example.",
+                "Clear explanation of the challenge and the learning process.",
+                "Demonstration of how the NIAT program contributed to their skill development.",
+                "Ability to reflect on their own growth."
+            ]
+        },
+        {
+            "question_id": "RESUME_03",
+            "question": "Your summary states you're 'motivated to keep building projects, strengthening my fundamentals, and growing step by step as a future software professional.' What specific steps do you envision taking in the next 1-2 years to achieve this growth, particularly considering the skills and experience required for a role like a Software Engineer at Google?",
+            "difficulty": "Medium",
+            "purpose": "Understand their career vision, self-awareness of the gap, and proactive planning.",
+            "expected_answer_points": [
+                "Acknowledgement of current stage and the gap for a 2+ years experience role.",
+                "Specific plan for acquiring missing skills (e.g., dedicated learning for SQL, FastAPI, Git through courses, tutorials, and practice projects).",
+                "Focus on building a robust portfolio with more complex, integrated projects (e.g., a full-stack application with a database).",
+                "Seeking internships or entry-level developer positions to gain professional experience.",
+                "Continuing academic excellence in the BITS Pilani program.",
+                "Networking and participating in coding challenges/hackathons."
+            ],
+            "evaluation_criteria": [
+                "Realism and clarity of their career plan.",
+                "Demonstration of self-awareness regarding skill and experience gaps.",
+                "Proactive and structured approach to skill acquisition and career development.",
+                "Alignment of their steps with long-term software professional goals."
+            ]
+        }
+    ],
+    "project_based_questions": [
+        {
+            "question_id": "PROJECT_01",
+            "question": "For your 'Responsive Personal Website', you mentioned focusing on 'clean UI design, accessibility, and maintainable code structure'. Can you elaborate on one specific design or coding decision you made to enhance accessibility, and how you ensured your CSS was maintainable as the project grew?",
+            "difficulty": "Medium",
+            "purpose": "Assess practical application of design principles, code quality, and attention to detail.",
+            "expected_answer_points": [
+                "Accessibility decision: Using semantic HTML5 elements (e.g., <nav>, <header>, <main>, <footer>) for better screen reader navigation; ensuring sufficient color contrast; providing alt text for images; implementing keyboard navigation for interactive elements.",
+                "CSS Maintainability: Using a consistent naming convention (e.g., BEM); organizing CSS into logical sections or separate files; utilizing CSS variables for colors/fonts; commenting complex sections; avoiding excessive !important declarations."
+            ],
+            "evaluation_criteria": [
+                "Specific and relevant example for accessibility.",
+                "Clear explanation of CSS maintainability strategies.",
+                "Demonstration of understanding best practices in web development.",
+                "Ability to justify design and coding choices."
+            ]
+        },
+        {
+            "question_id": "PROJECT_02",
+            "question": "In your 'Core Python Programming Concepts Practice' project, you mentioned 'solving logical problems and real-world inspired tasks'. Can you describe one such 'real-world inspired task' you tackled, what problem it aimed to solve, and how you structured your Python code to address it?",
+            "difficulty": "Medium",
+            "purpose": "Understand their problem-solving approach using Python and ability to translate real-world problems into code.",
+            "expected_answer_points": [
+                "Description of a 'real-world inspired task' (e.g., a simple calculator, a text analyzer, a basic inventory system, a data processing script).",
+                "Problem statement: What specific challenge or need did this task address?",
+                "Code structure: How was the Python code organized (e.g., using functions for modularity, classes for object-oriented design if applicable, appropriate data structures like dictionaries or lists)?",
+                "Explanation of key logic or algorithms used to solve the problem."
+            ],
+            "evaluation_criteria": [
+                "Clarity of the problem description and its real-world relevance.",
+                "Logical breakdown of the solution into code components.",
+                "Effective use of Python programming concepts (functions, control flow, data structures).",
+                "Ability to articulate the thought process behind the code structure."
+            ]
+        },
+        {
+            "question_id": "PROJECT_03",
+            "question": "Across both your projects, what was the most significant technical challenge you faced, and how did you overcome it? What key learning did you take away from that experience that you would apply to future projects?",
+            "difficulty": "Medium",
+            "purpose": "Assess problem-solving under pressure, resilience, and ability to learn from experience.",
+            "expected_answer_points": [
+                "Identification of a specific, significant technical challenge (e.g., complex CSS layout, tricky JavaScript logic, optimizing Python code for performance, a difficult debugging scenario).",
+                "Steps taken to overcome it: Researching documentation, consulting online resources (Stack Overflow, tutorials), breaking down the problem, iterative testing, seeking peer advice.",
+                "Resolution: How the challenge was ultimately solved.",
+                "Key learning: A specific insight gained (e.g., importance of planning, modular design, testing early and often, understanding error messages, using a debugger effectively)."
+            ],
+            "evaluation_criteria": [
+                "Depth and relevance of the technical challenge described.",
+                "Demonstration of a systematic and resourceful approach to problem-solving.",
+                "Clear articulation of the solution and its impact.",
+                "Insightful reflection on the lessons learned and their applicability to future work."
+            ]
+        }
+    ],
+    "missing_skill_questions": [
+        {
+            "question_id": "GAP_01",
+            "question": "The Software Engineer role requires working with databases and specifically mentions SQL. While it's not a skill you've listed, how familiar are you with the concept of relational databases and SQL? If you were tasked with learning SQL for a project next week, how would you approach acquiring that skill?",
+            "difficulty": "Medium",
+            "purpose": "Assess awareness of database concepts, understanding of SQL's role, and a proactive learning strategy.",
+            "expected_answer_points": [
+                "Awareness: Basic understanding of what a database is, the concept of tables, rows, columns, and how data is stored/organized in relational databases.",
+                "SQL's role: Understanding that SQL is a language for managing and querying relational databases (e.g., SELECT, INSERT, UPDATE, DELETE).",
+                "Learning approach: Start with interactive online tutorials (e.g., SQLZoo, freeCodeCamp, DataCamp), practice basic queries, work through LeetCode SQL problems, set up a local database (e.g., SQLite, PostgreSQL) and build a small project that interacts with it."
+            ],
+            "evaluation_criteria": [
+                "Demonstrates conceptual awareness of relational databases and SQL.",
+                "Presents a structured, realistic, and resourceful learning plan.",
+                "Shows initiative and a proactive attitude towards skill acquisition."
+            ]
+        },
+        {
+            "question_id": "GAP_02",
+            "question": "The job also requires experience with developing REST APIs using frameworks like FastAPI and using version control systems like Git. Can you explain what you understand about the purpose of a REST API and a version control system like Git? If you needed to learn FastAPI and Git for a team project, what would be your first steps?",
+            "difficulty": "Medium",
+            "purpose": "Assess conceptual understanding of key backend and development workflow tools, and a structured learning approach.",
+            "expected_answer_points": [
+                "REST API purpose: Understanding it as a set of rules for how two computer systems communicate over HTTP, typically for web services (e.g., client requests data from server, server sends response).",
+                "Git purpose: Understanding it as a tool for tracking changes in source code during software development, enabling collaboration among multiple developers, and managing different versions of a project.",
+                "Learning approach for FastAPI: Review official documentation, follow online tutorials/courses for building a simple API, practice creating endpoints and handling requests/responses.",
+                "Learning approach for Git: Go through interactive tutorials (e.g., GitHub Learning Lab, Atlassian Git Tutorial), practice basic commands (clone, add, commit, push, pull), understand branching and merging, contribute to a small personal or collaborative repository."
+            ],
+            "evaluation_criteria": [
+                "Demonstrates a basic conceptual understanding of REST APIs and Git.",
+                "Presents a logical and actionable plan for learning both technologies.",
+                "Shows an understanding of the importance of these tools in software development."
+            ]
+        }
+    ],
+    "behavioral_questions": [
+        {
+            "question_id": "BEHAVIOR_01",
+            "question": "Tell me about a time when you faced a significant challenge or obstacle in your academic studies or a project, and how you approached solving it. What was the outcome?",
+            "difficulty": "Medium",
+            "purpose": "Evaluate problem-solving skills, resilience, and ability to learn from difficulties.",
+            "expected_answer_points": [
+                "Situation: Describe the specific challenge or obstacle.",
+                "Task: Explain what you needed to achieve.",
+                "Action: Detail the steps you took to analyze the problem, brainstorm solutions, seek help (if applicable), and implement a solution.",
+                "Result: Describe the outcome of your actions and what you learned from the experience."
+            ],
+            "evaluation_criteria": [
+                "Uses the STAR method (Situation, Task, Action, Result) for a structured answer.",
+                "Demonstrates analytical thinking and persistence in problem-solving.",
+                "Reflects on the learning experience and applies it to future situations."
+            ]
+        },
+        {
+            "question_id": "BEHAVIOR_02",
+            "question": "You've highlighted 'Consistent Learning' and 'Adaptability' as key skills. Describe a situation where you had to learn a completely new technology or concept quickly to complete a task or project. How did you go about it, and what was the result?",
+            "difficulty": "Medium",
+            "purpose": "Assess their learning agility, resourcefulness, and ability to apply new knowledge.",
+            "expected_answer_points": [
+                "Situation: Describe the context where a new technology/concept was required.",
+                "Task: Explain the goal that necessitated this rapid learning.",
+                "Action: Detail the specific steps taken to learn (e.g., reading documentation, watching tutorials, hands-on experimentation, asking questions).",
+                "Result: Describe the successful completion of the task/project and how the new skill was applied."
+            ],
+            "evaluation_criteria": [
+                "Provides a clear and specific example.",
+                "Demonstrates a structured and effective learning process.",
+                "Shows adaptability and ability to integrate new knowledge quickly.",
+                "Highlights a positive outcome or successful application of the new skill."
+            ]
+        },
+        {
+            "question_id": "BEHAVIOR_03",
+            "question": "You've listed 'Team Collaboration' as a skill. Can you describe a situation where you collaborated with others on a project or task? What was your role, and how did you contribute to the team's success?",
+            "difficulty": "Easy",
+            "purpose": "Evaluate teamwork skills, communication, and ability to contribute in a group setting.",
+            "expected_answer_points": [
+                "Situation: Describe a specific team project or collaborative task (e.g., group assignment, Ideathon, NIAT activity).",
+                "Task: Explain the team's objective.",
+                "Action: Detail your specific role and contributions (e.g., coding a module, researching, presenting, facilitating discussions, resolving conflicts).",
+                "Result: Describe the team's successful outcome and how your contribution helped achieve it."
+            ],
+            "evaluation_criteria": [
+                "Clear description of a collaborative experience.",
+                "Articulates their specific role and responsibilities.",
+                "Demonstrates effective communication and teamwork skills.",
+                "Highlights a positive contribution to the team's success."
+            ]
+        }
+    ],
+    "hr_questions": [
+        {
+            "question_id": "HR_01",
+            "question": "Given your current stage in your education and skill development, what are your immediate career goals for the next 1-2 years, and how do you see a role like a Software Engineer at Google aligning with those aspirations, even if it's a stretch at this moment?",
+            "difficulty": "Medium",
+            "purpose": "Understand their realistic career expectations, long-term vision, and how they perceive the company/role.",
+            "expected_answer_points": [
+                "Immediate goals: Focus on gaining practical experience (internships, entry-level roles), mastering core backend skills (SQL, FastAPI, Git), building a strong project portfolio.",
+                "Alignment with Google: Expresses admiration for Google's innovation, learning culture, impact, and desire to contribute to challenging projects. Acknowledges the current experience gap but sees Google as a long-term aspiration and a place for immense growth and learning."
+            ],
+            "evaluation_criteria": [
+                "Demonstrates self-awareness regarding their current career stage.",
+                "Articulates realistic and actionable short-term career goals.",
+                "Expresses genuine interest in Google and its values, even if the role is a stretch.",
+                "Shows a growth mindset and long-term ambition."
+            ]
+        },
+        {
+            "question_id": "HR_02",
+            "question": "What are your expectations regarding an ideal first professional role, and what is your availability for an internship or a full-time position, considering your ongoing studies?",
+            "difficulty": "Easy",
+            "purpose": "Clarify practical aspects like role expectations, availability, and commitment.",
+            "expected_answer_points": [
+                "Ideal role expectations: A role that offers significant learning opportunities, mentorship, exposure to real-world projects, a collaborative team environment, and a chance to apply and expand their foundational skills.",
+                "Availability: Clearly states their current student status and outlines their availability (e.g., 'available for summer internships', 'seeking part-time opportunities during studies', 'available for full-time upon graduation in [Year]')."
+            ],
+            "evaluation_criteria": [
+                "Clarity and professionalism in stating expectations.",
+                "Realism of expectations for an entry-level/internship role.",
+                "Transparency and accuracy regarding their availability and academic commitments."
+            ]
+        }
+    ]
+}

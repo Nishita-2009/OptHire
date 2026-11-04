@@ -1,0 +1,72 @@
+{
+    "name": "G.NishitaSri",
+    "email": "NISHITHASRI851@GMAIL.COM",
+    "phone": "7013360155",
+    "location": "HYDERABAD",
+    "linkedin": "LINKEDIN",
+    "github": "",
+    "portfolio": "",
+    "summary": "I’m a BSc Computer Science student (1st year) enrolled in the BITS Pilani Online program, currently developing practical skills through the NIAT skill training program. My learning journey includes Python, JavaScript, HTML, CSS, and Data Structures & Algorithms, along with a strong focus on English communication and professional skills. I believe in learning through consistency, practice, and real-world application. I’m motivated to keep building projects, strengthening my fundamentals, and growing step by step as a future software professional.",
+    "education": [
+        {
+            "degree": "Bachelor of Science (BSc) in Computer Science",
+            "college": "BITS Pilani (Online)",
+            "year": "Ongoing",
+            "cgpa": ""
+        }
+    ],
+    "experience": [
+        {
+            "company": "NIAT Skill Program",
+            "role": "Student Trainee",
+            "duration": "Ongoing",
+            "description": "Undergoing structured training in Python, JavaScript, HTML, CSS, and Data Structures & Algorithms, with an emphasis on building strong programming fundamentals. Applying learned concepts through hands-on practice, coding exercises, and beginner-level projects. Developing problem-solving and logical thinking skills through consistent practice of algorithmic concepts. Actively improving English communication and professional skills to enhance collaboration and workplace readiness."
+        }
+    ],
+    "skills": [
+        "Python",
+        "JavaScript",
+        "HTML5",
+        "CSS3",
+        "Data Structures & Algorithms",
+        "English Communication",
+        "Presentation Skills",
+        "Team Collaboration",
+        "Consistent Learning",
+        "Time Management",
+        "Adaptability",
+        "Problem-solving",
+        "Logical Thinking",
+        "UI Design",
+        "Accessibility",
+        "Debugging"
+    ],
+    "projects": [
+        {
+            "title": "Responsive Personal Website",
+            "description": "Designed and developed a responsive personal website to professionally present academic background, skills, projects, and certifications. Implemented structured layouts, smooth navigation, and basic interactivity using JavaScript. Focused on clean UI design, accessibility, and maintainable code structure.",
+            "technologies": [
+                "HTML",
+                "CSS",
+                "JavaScript"
+            ]
+        },
+        {
+            "title": "Core Python Programming Concepts Practice",
+            "description": "Created multiple Python programs to practice core programming concepts including variables, conditionals, loops, functions, and basic data handling. Solved logical problems and real-world inspired tasks to strengthen problem-solving skills. Improved code readability, modularity, and debugging techniques.",
+            "technologies": [
+                "Python"
+            ]
+        }
+    ],
+    "certifications": [
+        "NIAT Skill Development Program (Ongoing)",
+        "Microsoft AI to Aspire course (Ongoing, Through Government Skill Development Initiative)"
+    ],
+    "languages": [
+        "English"
+    ],
+    "achievements": [
+        "Secured 3rd position in an Ideathon by presenting an innovative idea focused on problem-solving and practical application."
+    ]
+}

@@ -1,0 +1,24 @@
+{
+    "overall_interview_score": 0,
+    "performance_level": "Unsatisfactory",
+    "technical_performance": "Extremely Poor - The candidate provided nonsensical strings for both technical questions, demonstrating a complete lack of understanding of fundamental concepts.",
+    "problem_solving_performance": "Not Demonstrated - The candidate's inability to provide any coherent answers prevented any assessment of problem-solving abilities.",
+    "communication_performance": "Extremely Poor - The candidate provided nonsensical strings instead of answers, indicating a severe inability to communicate effectively or engage with the questions.",
+    "strongest_areas": [],
+    "weakest_areas": [
+        "Technical Fundamentals",
+        "Communication Skills",
+        "Ability to Articulate Concepts"
+    ],
+    "key_strengths": [],
+    "areas_for_improvement": [
+        "Acquire foundational technical knowledge in Python and algorithms",
+        "Develop basic communication skills for technical discussions",
+        "Practice formulating coherent responses to interview questions"
+    ],
+    "interview_summary": "The candidate's performance was extremely poor across all assessed areas. For both technical questions (Python generators and Big O notation), the candidate provided nonsensical strings ('tugykuhnl', 'fc jghk') instead of coherent answers. This indicates a complete lack of understanding of fundamental technical concepts and a severe inability to communicate effectively. No technical knowledge, problem-solving skills, or even basic comprehension were demonstrated during the interview.",
+    "recommendation": "No Hire",
+    "next_action": "Reject",
+    "questions_generated": 21,
+    "questions_answered": 2
+}
