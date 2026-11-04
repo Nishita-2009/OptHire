@@ -1,0 +1,26 @@
+{
+    "overall_interview_score": 90,
+    "performance_level": "Strong",
+    "technical_performance": "Demonstrated deep understanding of asynchronous Python and API development.",
+    "problem_solving_performance": "Clean algorithmic approach with clear consideration of complexity constraints.",
+    "communication_performance": "Articulate, precise, and concise technical responses.",
+    "strongest_areas": [
+        "FastAPI concurrency internals",
+        "Algorithmic optimization"
+    ],
+    "weakest_areas": [
+        "Distributed deployment nuances"
+    ],
+    "key_strengths": [
+        "Strong core CS fundamentals",
+        "Practical engineering mindset"
+    ],
+    "areas_for_improvement": [
+        "Continue hands-on practice with container orchestration"
+    ],
+    "interview_summary": "The candidate performed very well across tested questions, demonstrating clear competency for a mid-level backend role.",
+    "recommendation": "Hire",
+    "next_action": "Move forward to final team match / offer discussion.",
+    "questions_generated": 21,
+    "questions_answered": 2
+}

@@ -38,6 +38,19 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
+# Candidate data, uploads & generated outputs (PII Protection)
+# Personal uploads and live candidate outputs are excluded.
+backend/uploads/*
+!backend/uploads/.gitkeep
+!backend/uploads/sample_jd.txt
+!backend/uploads/sample_resume_synthetic.pdf
+
+backend/outputs/*
+!backend/outputs/.gitkeep
+
+outputs/
+!outputs/.gitkeep
+
 # OS / Editor metadata
 .DS_Store
 Thumbs.db

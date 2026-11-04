@@ -1,0 +1,57 @@
+{
+    "name": "Alex Morgan",
+    "email": "alex.morgan@example.com",
+    "phone": "555-0199",
+    "location": "San Francisco, CA",
+    "linkedin": "https://linkedin.com/in/alexmorgan-dev",
+    "github": "https://github.com/alexmorgan-dev",
+    "portfolio": "https://alexmorgan.dev",
+    "summary": "Full Stack / Backend Engineer with 2+ years of experience in Python, FastAPI, SQL, and distributed system architectures.",
+    "education": [
+        {
+            "degree": "Bachelor of Science in Computer Science",
+            "college": "State University",
+            "year": "2022",
+            "cgpa": "3.8/4.0"
+        }
+    ],
+    "experience": [
+        {
+            "company": "CloudCorp Solutions",
+            "role": "Software Engineer",
+            "duration": "2022 - Present",
+            "description": "Designed and deployed RESTful microservices with FastAPI and PostgreSQL. Implemented CI/CD pipelines with GitHub Actions and Docker."
+        }
+    ],
+    "skills": [
+        "Python",
+        "FastAPI",
+        "SQL",
+        "PostgreSQL",
+        "Git",
+        "Docker",
+        "REST APIs",
+        "Linux"
+    ],
+    "projects": [
+        {
+            "title": "Scalable Task Engine",
+            "description": "Asynchronous background task processing system with Redis queues and FastAPI endpoints.",
+            "technologies": [
+                "Python",
+                "FastAPI",
+                "Redis",
+                "PostgreSQL"
+            ]
+        }
+    ],
+    "certifications": [
+        "AWS Certified Cloud Practitioner"
+    ],
+    "languages": [
+        "English"
+    ],
+    "achievements": [
+        "Dean's Honor List 2021-2022"
+    ]
+}

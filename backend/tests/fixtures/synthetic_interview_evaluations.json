@@ -1,0 +1,38 @@
+[
+    {
+        "score": 92,
+        "rating": "Strong",
+        "answer_summary": "Candidate clearly explained the asyncio event loop and differences with sync worker threadpools.",
+        "strengths": [
+            "Accurate technical explanation of ASGI architecture",
+            "Good distinction between I/O bound and CPU bound tasks"
+        ],
+        "missing_points": [
+            "Could have touched on Starlette middleware handling"
+        ],
+        "feedback": "Comprehensive and clear explanation.",
+        "ideal_answer": "In FastAPI, async def runs on the main event loop for non-blocking I/O, while standard def runs on an external threadpool.",
+        "question_id": "TECH_01",
+        "question": "How do FastAPI's async endpoints differ from synchronous endpoints under an ASGI server like Uvicorn?",
+        "candidate_answer": "Async endpoints run directly on the event loop for non-blocking I/O. Sync endpoints are offloaded to an anyio worker threadpool so they don't block the loop.",
+        "category": "Technical"
+    },
+    {
+        "score": 88,
+        "rating": "Strong",
+        "answer_summary": "Candidate provided correct hash map frequency counting logic with O(n) runtime complexity.",
+        "strengths": [
+            "Optimal time and space complexity",
+            "Handled early termination on length mismatch"
+        ],
+        "missing_points": [
+            "Could mention Collections.Counter as a standard Python utility"
+        ],
+        "feedback": "Solid implementation approach.",
+        "ideal_answer": "Use a hash map or Counter to count character occurrences after checking matching string lengths.",
+        "question_id": "CODE_01",
+        "question": "Write a Python function to detect whether two strings are anagrams of each other in O(n) time.",
+        "candidate_answer": "First check if lengths match. Then count character frequencies using a dictionary or Counter and ensure counts are identical in O(n) time.",
+        "category": "Coding"
+    }
+]

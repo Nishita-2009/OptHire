@@ -1,0 +1,40 @@
+{
+    "overall_match_score": 88,
+    "confidence_score": 90,
+    "candidate_summary": "Strong backend candidate with direct hands-on experience in required stack (Python, FastAPI, SQL, Git).",
+    "skill_match": {
+        "score": 92,
+        "reason": "Possesses all core required technical skills and several preferred skills."
+    },
+    "experience_match": {
+        "score": 85,
+        "reason": "Meets the 2+ years software engineering experience requirement."
+    },
+    "education_match": {
+        "score": 90,
+        "reason": "Holds a BS in Computer Science from an accredited institution."
+    },
+    "matched_skills": [
+        "Python",
+        "FastAPI",
+        "SQL",
+        "Git",
+        "Docker",
+        "PostgreSQL"
+    ],
+    "missing_skills": [
+        "Kubernetes"
+    ],
+    "strengths": [
+        "Solid API architecture background",
+        "Practical experience with database query tuning"
+    ],
+    "weaknesses": [
+        "Limited large-scale distributed caching experience"
+    ],
+    "risk_level": "Low",
+    "salary_fit": "Aligned",
+    "interview_difficulty": "Medium",
+    "recommendation": "Proceed to technical interview",
+    "next_action": "Schedule Technical and Coding Interview"
+}

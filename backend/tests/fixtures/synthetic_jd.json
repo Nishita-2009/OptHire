@@ -1,0 +1,27 @@
+{
+    "company": "TechGlobal Innovations",
+    "job_title": "Software Engineer (Backend)",
+    "experience": "2+ years",
+    "education": "Bachelor's Degree in Computer Science or related field",
+    "required_skills": [
+        "Python",
+        "FastAPI",
+        "SQL",
+        "Git"
+    ],
+    "preferred_skills": [
+        "Docker",
+        "Redis",
+        "PostgreSQL",
+        "Cloud Services"
+    ],
+    "responsibilities": [
+        "Develop high-performance REST APIs",
+        "Work with SQL databases and query optimization",
+        "Collaborate with cross-functional product and frontend teams"
+    ],
+    "certifications": [],
+    "location": "Remote / San Francisco, CA",
+    "employment_type": "Full Time",
+    "salary": "$110,000 - $130,000"
+}

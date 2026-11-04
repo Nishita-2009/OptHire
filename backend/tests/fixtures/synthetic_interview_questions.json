@@ -1,0 +1,199 @@
+{
+    "candidate_level": "Mid-Level",
+    "target_role": "Software Engineer (Backend)",
+    "estimated_interview_duration": "60 minutes",
+    "overall_interview_difficulty": "Medium",
+    "interview_strategy": "Evaluate Python concurrency, SQL indexing, architectural decisions on projects, and problem-solving capability.",
+    "question_distribution": {
+        "technical": 5,
+        "coding": 3,
+        "resume_based": 3,
+        "project_based": 3,
+        "missing_skill": 2,
+        "behavioral": 3,
+        "hr": 2,
+        "total": 21
+    },
+    "technical_questions": [
+        {
+            "question_id": "TECH_01",
+            "question": "How do FastAPI's async endpoints differ from synchronous endpoints under an ASGI server like Uvicorn?",
+            "difficulty": "Medium",
+            "purpose": "Assess understanding of asynchronous I/O and concurrency in Python.",
+            "expected_answer_points": ["Event loop non-blocking I/O", "Threadpool delegation for sync functions", "Context switching overhead"],
+            "evaluation_criteria": ["Clear technical explanation of event loop", "Correct distinction between CPU vs IO bound tasks"]
+        },
+        {
+            "question_id": "TECH_02",
+            "question": "What is the difference between an INNER JOIN and an OUTER JOIN in SQL, and when would you use indexing?",
+            "difficulty": "Easy",
+            "purpose": "Verify relational database querying and schema optimization fundamentals.",
+            "expected_answer_points": ["Row matching logic", "B-tree index lookups", "Query execution plan impact"],
+            "evaluation_criteria": ["Correct definition", "Appropriate index usage scenarios"]
+        },
+        {
+            "question_id": "TECH_03",
+            "question": "How does Python manage memory, and what role does the Global Interpreter Lock (GIL) play?",
+            "difficulty": "Hard",
+            "purpose": "Evaluate depth of core Python runtime knowledge.",
+            "expected_answer_points": ["Reference counting and cyclic GC", "Thread safety in CPython", "Multi-processing alternatives"],
+            "evaluation_criteria": ["Accuracy in explaining GIL limitations and workarounds"]
+        },
+        {
+            "question_id": "TECH_04",
+            "question": "Explain idempotency in REST API design and which HTTP methods must be idempotent.",
+            "difficulty": "Medium",
+            "purpose": "Test API design standards and reliable distributed operations.",
+            "expected_answer_points": ["Definition of idempotency", "GET, PUT, DELETE are idempotent", "POST is non-idempotent"],
+            "evaluation_criteria": ["Correct categorization of HTTP verbs"]
+        },
+        {
+            "question_id": "TECH_05",
+            "question": "How do you handle database transaction rollbacks and data consistency in an ORM like SQLAlchemy?",
+            "difficulty": "Medium",
+            "purpose": "Check transaction integrity practices.",
+            "expected_answer_points": ["ACID properties", "Session commit and rollback mechanisms", "Context manager usage"],
+            "evaluation_criteria": ["Demonstrates safe transactional scoping"]
+        }
+    ],
+    "coding_questions": [
+        {
+            "question_id": "CODE_01",
+            "question": "Write a Python function to detect whether two strings are anagrams of each other in O(n) time.",
+            "difficulty": "Easy",
+            "purpose": "Test basic data structure and algorithmic efficiency.",
+            "expected_answer_points": ["Hash table or frequency array count", "Edge cases such as length mismatch"],
+            "evaluation_criteria": ["O(n) time complexity", "Clean code structure"]
+        },
+        {
+            "question_id": "CODE_02",
+            "question": "Given a list of intervals, write a function that merges all overlapping intervals.",
+            "difficulty": "Medium",
+            "purpose": "Assess sorting and greedy algorithm manipulation.",
+            "expected_answer_points": ["Sort intervals by start time", "Iterative merging comparing end times"],
+            "evaluation_criteria": ["Correct interval comparison logic", "Optimal O(n log n) time"]
+        },
+        {
+            "question_id": "CODE_03",
+            "question": "Implement an LRU (Least Recently Used) cache with O(1) get and put operations.",
+            "difficulty": "Hard",
+            "purpose": "Assess complex data structure coordination.",
+            "expected_answer_points": ["Doubly linked list paired with hash map", "Node eviction mechanics"],
+            "evaluation_criteria": ["O(1) time complexity guarantee for both operations"]
+        }
+    ],
+    "resume_based_questions": [
+        {
+            "question_id": "RESUME_01",
+            "question": "You mentioned working on REST microservices at CloudCorp. How did you structure your API versioning and test coverage?",
+            "difficulty": "Medium",
+            "purpose": "Validate claims regarding real-world professional backend delivery.",
+            "expected_answer_points": ["Semantic or URL versioning", "Pytest unit and integration test strategies"],
+            "evaluation_criteria": ["Real-world context and concrete testing examples"]
+        },
+        {
+            "question_id": "RESUME_02",
+            "question": "Can you describe a challenging bug you diagnosed and fixed in production while working with PostgreSQL?",
+            "difficulty": "Medium",
+            "purpose": "Assess debugging methodology and composure.",
+            "expected_answer_points": ["Root cause identification", "Log analysis and query profiling", "Resolution validation"],
+            "evaluation_criteria": ["Structured problem solving"]
+        },
+        {
+            "question_id": "RESUME_03",
+            "question": "How did you implement CI/CD with Docker and GitHub Actions in your previous role?",
+            "difficulty": "Medium",
+            "purpose": "Evaluate familiarity with DevOps workflow.",
+            "expected_answer_points": ["Automated test step", "Container building and tagging", "Deployment triggers"],
+            "evaluation_criteria": ["Demonstrated understanding of pipeline stages"]
+        }
+    ],
+    "project_based_questions": [
+        {
+            "question_id": "PROJECT_01",
+            "question": "In your Scalable Task Engine project, how did you handle task failures and retries within Redis queues?",
+            "difficulty": "Medium",
+            "purpose": "Deep dive into candidate's featured project architecture.",
+            "expected_answer_points": ["Dead letter queues", "Exponential backoff", "Idempotent workers"],
+            "evaluation_criteria": ["Resilience awareness in distributed systems"]
+        },
+        {
+            "question_id": "PROJECT_02",
+            "question": "What led you to choose Redis over other queue brokers like RabbitMQ or Kafka for this project?",
+            "difficulty": "Medium",
+            "purpose": "Examine architectural trade-off reasoning.",
+            "expected_answer_points": ["Simplicity and in-memory speed", "Trade-offs regarding persistence and message throughput"],
+            "evaluation_criteria": ["Balanced architectural justification"]
+        },
+        {
+            "question_id": "PROJECT_03",
+            "question": "How would you monitor the performance and latency of your background task engine under high throughput?",
+            "difficulty": "Medium",
+            "purpose": "Assess observability principles.",
+            "expected_answer_points": ["Queue depth metrics", "Worker processing latency telemetry", "Structured logging"],
+            "evaluation_criteria": ["Holistic observability mindset"]
+        }
+    ],
+    "missing_skill_questions": [
+        {
+            "question_id": "GAP_01",
+            "question": "While your profile shows Docker proficiency, what has been your exposure to Kubernetes, and how would you approach container orchestration?",
+            "difficulty": "Medium",
+            "purpose": "Test conceptual awareness of Kubernetes architecture.",
+            "expected_answer_points": ["Pods, Deployments, Services concepts", "Eagerness and framework for learning"],
+            "evaluation_criteria": ["Honest self-assessment and foundational knowledge"]
+        },
+        {
+            "question_id": "GAP_02",
+            "question": "How would you design a health check probe (liveness/readiness) for a FastAPI microservice deployed on Kubernetes?",
+            "difficulty": "Medium",
+            "purpose": "Assess transferability of container knowledge to orchestration.",
+            "expected_answer_points": ["Liveness vs readiness distinction", "Dedicated lightweight health endpoints"],
+            "evaluation_criteria": ["Accurate purpose of probe types"]
+        }
+    ],
+    "behavioral_questions": [
+        {
+            "question_id": "BEHAVIOR_01",
+            "question": "Describe a situation where you had a technical disagreement with a teammate regarding system design. How did you resolve it?",
+            "difficulty": "Medium",
+            "purpose": "Evaluate interpersonal communication and collaborative resolution.",
+            "expected_answer_points": ["Data-driven discussion", "Active listening", "Commitment to shared outcome"],
+            "evaluation_criteria": ["Constructive conflict resolution"]
+        },
+        {
+            "question_id": "BEHAVIOR_02",
+            "question": "Tell me about a time you had to meet a tight deadline with changing requirements.",
+            "difficulty": "Medium",
+            "purpose": "Assess adaptability and prioritization.",
+            "expected_answer_points": ["Scope triage", "Stakeholder communication", "Pragmatic delivery"],
+            "evaluation_criteria": ["Clear prioritization framework"]
+        },
+        {
+            "question_id": "BEHAVIOR_03",
+            "question": "Can you give an example of constructive feedback you received from a mentor or manager, and what actions you took?",
+            "difficulty": "Medium",
+            "purpose": "Assess receptiveness to feedback and continuous learning orientation.",
+            "expected_answer_points": ["Specific feedback instance", "Concrete improvement steps", "Positive attitude toward growth"],
+            "evaluation_criteria": ["Self-awareness and growth mindset"]
+        }
+    ],
+    "hr_questions": [
+        {
+            "question_id": "HR_01",
+            "question": "What type of engineering team culture and working environment helps you do your best work?",
+            "difficulty": "Easy",
+            "purpose": "Evaluate cultural alignment and team fit.",
+            "expected_answer_points": ["Collaborative environment", "Code reviews and mentorship", "Psychological safety"],
+            "evaluation_criteria": ["Clarity of preferences and professional expectations"]
+        },
+        {
+            "question_id": "HR_02",
+            "question": "Where do you see yourself technically and professionally over the next two to three years?",
+            "difficulty": "Easy",
+            "purpose": "Understand career goals and alignment with backend path.",
+            "expected_answer_points": ["Deepening backend expertise", "System design mastery", "Growing into mentorship"],
+            "evaluation_criteria": ["Realistic and ambitious professional goals"]
+        }
+    ]
+}

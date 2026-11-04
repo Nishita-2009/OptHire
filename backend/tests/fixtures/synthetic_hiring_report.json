@@ -1,0 +1,76 @@
+{
+    "report_title": "OptHire AI Hiring Report",
+    "candidate": {
+        "name": "Alex Morgan",
+        "target_role": "Software Engineer (Backend)",
+        "candidate_summary": "Solid backend engineer with proven proficiency in Python, FastAPI, SQL, and REST microservices."
+    },
+    "executive_summary": "Alex Morgan is a well-rounded mid-level backend candidate who meets all mandatory role requirements and performed admirably in technical evaluations.",
+    "scores": {
+        "resume_match_score": 88,
+        "interview_score": 90,
+        "final_hiring_score": 89,
+        "decision_confidence": 92
+    },
+    "resume_evaluation": {
+        "matched_skills": [
+            "Python",
+            "FastAPI",
+            "SQL",
+            "Git",
+            "Docker"
+        ],
+        "missing_skills": [
+            "Kubernetes"
+        ],
+        "key_strengths": [
+            "Relevant experience building production microservices",
+            "Clear technical writing and background in computer science"
+        ],
+        "key_weaknesses": [
+            "Orchestration experience limited to single-node containerization"
+        ],
+        "summary": "Resume shows strong alignment with core team tech stack."
+    },
+    "interview_evaluation": {
+        "performance_level": "Strong",
+        "strongest_areas": [
+            "Python asyncio architecture",
+            "Algorithms and data structures"
+        ],
+        "weakest_areas": [
+            "Distributed Kubernetes deployments"
+        ],
+        "summary": "Candidate clearly articulated complex engineering concepts with high confidence."
+    },
+    "skill_gap_evaluation": {
+        "priority_gaps": [
+            "Kubernetes orchestration"
+        ],
+        "estimated_upskilling_time": "2-3 weeks",
+        "development_summary": "The identified skill gap in Kubernetes can be bridged quickly with on-the-job mentorship and dedicated labs."
+    },
+    "hiring_risks": [
+        {
+            "risk": "Kubernetes onboarding curve",
+            "severity": "Low",
+            "reason": "Team can pair candidate with senior engineer for cluster deployments."
+        }
+    ],
+    "key_reasons_to_hire": [
+        "Direct domain match for FastAPI and SQL backend engineering",
+        "Strong algorithmic problem solving ability demonstrated in interview",
+        "High motivation and structured communication style"
+    ],
+    "key_reasons_for_caution": [
+        "Will require short ramp-up period on Kubernetes production setups"
+    ],
+    "final_decision": {
+        "recommendation": "Hire",
+        "risk_level": "Low",
+        "reasoning": "Candidate possesses required skills, performed strongly in interview, and demonstrates rapid learning capacity.",
+        "next_action": "Extend employment offer for Software Engineer position."
+    },
+    "recruiter_notes": "Recommended for offer. Candidate is available to start within standard notice period.",
+    "disclaimer": "This AI-generated report is decision support only. Final hiring decisions should include appropriate human review."
+}
