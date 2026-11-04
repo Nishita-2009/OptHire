@@ -1,45 +1,103 @@
-import json
+"""
+OptHire FastAPI Application Entry Point.
+Configures CORS, standardized exception handling, and API routing.
+"""
+import logging
 import os
-from pathlib import Path
+import uvicorn
+from fastapi import FastAPI, HTTPException, Request, status
+from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
-from agents.resume_parser.pdf_reader import extract_resume_text
-from agents.resume_parser.parser import parse_resume
+from api.router import root_router
+from config.settings import settings
+
+# Configure structured application logging
+logging.basicConfig(
+    level=logging.DEBUG if settings.DEBUG else logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+)
+logger = logging.getLogger("opthire.api")
 
 
-def main():
-    potential_paths = [
-        "uploads/sample_resume_synthetic.pdf",
-        "uploads/sample_resume.pdf",
-        "uploads/Resume.pdf",
-        "backend/uploads/sample_resume_synthetic.pdf",
-        "backend/uploads/sample_resume.pdf",
-    ]
-    pdf_path = None
-    for p in potential_paths:
-        if os.path.exists(p):
-            pdf_path = p
-            break
+def create_app() -> FastAPI:
+    """Application factory for OptHire FastAPI backend."""
+    app = FastAPI(
+        title=settings.APP_NAME,
+        version=settings.APP_VERSION,
+        description=(
+            "AI-powered candidate evaluation, ATS matching, interview generation, "
+            "and hiring decision support platform powered by Google Gemini."
+        ),
+        docs_url="/docs",
+        redoc_url="/redoc",
+    )
 
-    if not pdf_path:
-        raise FileNotFoundError(
-            "No sample resume PDF found in uploads/. Please place a resume PDF in uploads/."
+    # Configure CORS securely
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=settings.CORS_ORIGINS,
+        allow_credentials=True,
+        allow_methods=["GET", "POST", "OPTIONS"],
+        allow_headers=["*"],
+    )
+
+    # Standardized Exception Handlers
+    @app.exception_handler(HTTPException)
+    async def http_exception_handler(request: Request, exc: HTTPException):
+        return JSONResponse(
+            status_code=exc.status_code,
+            content={
+                "error": "HTTP_ERROR",
+                "message": exc.detail if isinstance(exc.detail, str) else "An HTTP error occurred",
+                "detail": exc.detail if not isinstance(exc.detail, str) else None,
+                "code": exc.status_code,
+            },
         )
 
-    print(f"Loading resume from: {pdf_path}")
-    resume_text = extract_resume_text(pdf_path)
-    print("✅ Resume Loaded Successfully\n")
+    @app.exception_handler(RequestValidationError)
+    async def validation_exception_handler(request: Request, exc: RequestValidationError):
+        # Format validation errors without leaking sensitive data
+        sanitized_errors = []
+        for err in exc.errors():
+            sanitized_errors.append({
+                "loc": err.get("loc"),
+                "msg": err.get("msg"),
+                "type": err.get("type"),
+            })
+        return JSONResponse(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            content={
+                "error": "VALIDATION_ERROR",
+                "message": "Input validation failed. Please check your request parameters.",
+                "detail": sanitized_errors,
+                "code": status.HTTP_422_UNPROCESSABLE_ENTITY,
+            },
+        )
 
-    parsed_resume = parse_resume(resume_text)
-    print("✅ Resume Parsed Successfully\n")
+    @app.exception_handler(Exception)
+    async def generic_exception_handler(request: Request, exc: Exception):
+        logger.error("Unhandled server exception: %s", exc, exc_info=settings.DEBUG)
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={
+                "error": "INTERNAL_SERVER_ERROR",
+                "message": "An unexpected internal server error occurred. Please try again later.",
+                "detail": str(exc) if settings.DEBUG else None,
+                "code": status.HTTP_500_INTERNAL_SERVER_ERROR,
+            },
+        )
 
-    os.makedirs("outputs", exist_ok=True)
-    output_file = "outputs/parsed_resume.json"
+    # Register API routes
+    app.include_router(root_router)
 
-    with open(output_file, "w", encoding="utf-8") as file:
-        json.dump(parsed_resume, file, indent=4, ensure_ascii=False)
+    return app
 
-    print(f"✅ JSON saved to {output_file}")
 
+app = create_app()
 
 if __name__ == "__main__":
-    main()
+    host = os.getenv("HOST", "127.0.0.1")
+    port = int(os.getenv("PORT", "8000"))
+    uvicorn.run("main:app", host=host, port=port, reload=True)
