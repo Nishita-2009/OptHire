@@ -8,7 +8,7 @@ OptHire is an intelligent recruitment decision-support platform designed to stre
 
 ## 1. Core Capabilities & The 7 AI Agents
 
-OptHire orchestrates seven specialized AI agents working sequentially or independently:
+OptHire orchestrates seven specialized AI agents working sequentially, independently, or within stateful database-persisted interview sessions:
 
 | Agent | Module | Description | Input | Output |
 |---|---|---|---|---|
@@ -70,6 +70,9 @@ OptHire orchestrates seven specialized AI agents working sequentially or indepen
 ## 3. Technology Stack
 
 - **Backend Framework**: FastAPI 0.138+ with Uvicorn
+- **Database ORM**: SQLAlchemy 2.x
+- **Database Migrations**: Alembic 1.13+
+- **Default Database**: SQLite (`sqlite:///./opthire.db`), fully PostgreSQL-ready
 - **AI Model**: Google Gemini (`gemini-2.5-flash`) via `langchain-google-genai`
 - **Language & Runtime**: Python 3.13+
 - **Data Validation & Schemas**: Pydantic v2
@@ -102,7 +105,7 @@ pip install -r backend/requirements.txt
 ```
 
 ### 2. Configuration
-Copy the example environment file and set your Gemini API key:
+Copy the example environment file:
 ```powershell
 cp backend/.env.example backend/.env
 ```
@@ -113,7 +116,31 @@ GOOGLE_API_KEY=your_actual_gemini_api_key_here
 PORT=8000
 HOST=127.0.0.1
 DEBUG=false
+DATABASE_URL=sqlite:///./opthire.db
 ```
+
+### 3. Database Migrations (Alembic)
+Apply the initial normalized database schema:
+```powershell
+cd backend
+alembic upgrade head
+cd ..
+```
+
+To create a new migration after model changes:
+```powershell
+cd backend
+alembic revision --autogenerate -m "add new column or table"
+alembic upgrade head
+cd ..
+```
+
+#### Switching from SQLite to PostgreSQL
+Change `DATABASE_URL` in your `.env` without modifying any Python code:
+```ini
+DATABASE_URL=postgresql+psycopg2://username:password@localhost:5432/opthire
+```
+Run `alembic upgrade head` to provision all tables on PostgreSQL.
 
 ---
 
@@ -140,125 +167,85 @@ Once the server is running, open your browser:
 
 ---
 
-## 6. REST API Endpoints & Sample Payloads
+## 6. REST API Endpoints Overview
 
-### `GET /health`
-Returns operational status without invoking Gemini.
-- **Response**: `200 OK`
-```json
-{
-  "status": "ok",
-  "app": "OptHire API",
-  "version": "1.0.0"
-}
-```
+### Health & Stateless Agent Endpoints (Phase 2)
 
-### `POST /api/v1/resumes/parse`
-Parses candidate credentials from an uploaded PDF.
-- **Content-Type**: `multipart/form-data`
-- **Body**: `file` (PDF file, max 10MB)
-- **Response**: `200 OK` with `ResumeParsedResponse`
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/health` | Server health check without calling Gemini |
+| `POST` | `/api/v1/resumes/parse` | Parse uploaded PDF resume via Agent 1 |
+| `POST` | `/api/v1/jobs/parse` | Parse job description text via Agent 2 |
+| `POST` | `/api/v1/match` | ATS match resume vs job description via Agent 3 |
+| `POST` | `/api/v1/skill-gap` | Analyze skill gaps and learning plan via Agent 4 |
+| `POST` | `/api/v1/interview/generate` | Generate 21 interview questions via Agent 5 |
+| `POST` | `/api/v1/interview/evaluate` | Evaluate candidate answer via Agent 6 |
+| `POST` | `/api/v1/reports/generate` | Synthesize stateless hiring report via Agent 7 |
+| `POST` | `/api/v1/pipeline/run` | Run Agents 1–5 sequentially via `HiringPipeline` |
 
-### `POST /api/v1/jobs/parse`
-Parses job description text into structured requirements.
-- **Content-Type**: `application/json`
-- **Payload**:
-```json
-{
-  "job_description": "We are seeking a Backend Engineer with 2+ years of experience in Python, FastAPI, and PostgreSQL. Responsibilities include building scalable REST APIs."
-}
-```
+### Persistent Entity & Stateful Interview Endpoints (Phase 3)
 
-### `POST /api/v1/match`
-Evaluates resume against job description.
-- **Content-Type**: `application/json`
-- **Payload**:
-```json
-{
-  "resume": { "name": "Alex Morgan", "skills": ["Python", "FastAPI", "SQL"] },
-  "job_description": { "job_title": "Backend Engineer", "required_skills": ["Python", "FastAPI", "SQL"] }
-}
-```
+#### Candidate Management
+| Method | Endpoint | Description |
+|---|---|---|
+| `POST` | `/api/v1/candidates` | Register candidate profile with parsed resume JSON |
+| `GET` | `/api/v1/candidates/{id}` | Retrieve candidate profile and resume data by UUID |
+| `GET` | `/api/v1/candidates` | List candidates with pagination (`skip`, `limit`) |
+| `GET` | `/api/v1/candidates/{id}/analysis` | List all analysis runs for a candidate |
 
-### `POST /api/v1/skill-gap`
-Identifies missing skills and tailored learning plan.
-- **Content-Type**: `application/json`
-- **Payload**:
-```json
-{
-  "resume": { "skills": ["Python", "FastAPI"] },
-  "job_description": { "required_skills": ["Python", "FastAPI", "Kubernetes"] },
-  "match_result": { "overall_match_score": 85, "missing_skills": ["Kubernetes"] }
-}
-```
+#### Job Openings
+| Method | Endpoint | Description |
+|---|---|---|
+| `POST` | `/api/v1/jobs` | Create a job posting with title, company, description |
+| `GET` | `/api/v1/jobs/{id}` | Retrieve job details and structured requirements |
+| `GET` | `/api/v1/jobs` | List job postings with pagination |
 
-### `POST /api/v1/interview/generate`
-Generates 21 personalized interview questions across 7 categories.
-- **Content-Type**: `application/json`
-- **Payload**:
-```json
-{
-  "resume": { "name": "Alex Morgan", "skills": ["Python", "FastAPI"] },
-  "job_description": { "job_title": "Backend Engineer", "required_skills": ["Python", "FastAPI"] },
-  "match_result": { "overall_match_score": 88 },
-  "skill_gap": { "missing_skills": [{ "skill": "Kubernetes", "priority": "Medium" }] }
-}
-```
+#### Analysis Runs
+| Method | Endpoint | Description |
+|---|---|---|
+| `POST` | `/api/v1/analysis` | Execute match (Agent 3) & skill gap (Agent 4) and persist run |
+| `GET` | `/api/v1/analysis/{id}` | Retrieve analysis inputs and results |
+| `GET` | `/api/v1/analysis/{id}/report` | Retrieve persisted hiring report for an analysis run |
 
-### `POST /api/v1/interview/evaluate`
-Evaluates a single candidate answer against a question rubric.
-- **Content-Type**: `application/json`
-- **Payload**:
-```json
-{
-  "question": {
-    "question_id": "TECH_01",
-    "question": "How do FastAPI async endpoints differ from sync endpoints?",
-    "category": "Technical",
-    "difficulty": "Medium",
-    "purpose": "Assess asyncio understanding",
-    "expected_answer_points": ["Event loop non-blocking I/O", "Threadpool delegation"],
-    "evaluation_criteria": ["Clarity and correctness"]
-  },
-  "candidate_answer": "Async endpoints run directly on the event loop for non-blocking I/O, whereas sync endpoints are offloaded to an anyio worker threadpool."
-}
-```
+#### Stateful Interview Sessions
+| Method | Endpoint | Description |
+|---|---|---|
+| `POST` | `/api/v1/interviews` | Create session; automatically generates 21 questions via Agent 5 |
+| `GET` | `/api/v1/interviews/{id}` | Get session status, current active question, and progress |
+| `GET` | `/api/v1/interviews/{id}/questions` | List all 21 ordered questions and answer status |
+| `POST` | `/api/v1/interviews/{id}/answers` | Submit answer; scores with Agent 6; auto-completes on final question |
+| `GET` | `/api/v1/interviews/{id}/answers` | List submitted answers and evaluations |
+| `POST` | `/api/v1/interviews/{id}/complete` | Explicitly complete interview and generate final summary via Agent 6 |
 
-### `POST /api/v1/reports/generate`
-Synthesizes candidate journey into final hiring report.
-- **Content-Type**: `application/json`
-- **Payload**:
-```json
-{
-  "resume": { "name": "Alex Morgan", "skills": ["Python", "FastAPI"] },
-  "job_description": { "job_title": "Backend Engineer" },
-  "match_result": { "overall_match_score": 88 },
-  "skill_gap": { "overall_gap_summary": "Minor gap in orchestration" },
-  "interview_summary": { "overall_interview_score": 90, "performance_level": "Strong", "recommendation": "Hire" }
-}
-```
-
-### `POST /api/v1/pipeline/run`
-Executes Agents 1 to 5 sequentially via `HiringPipeline`.
-- **Content-Type**: `multipart/form-data`
-- **Fields**:
-  - `file`: PDF file
-  - `job_description`: string
+#### Persistent Hiring Reports
+| Method | Endpoint | Description |
+|---|---|---|
+| `POST` | `/api/v1/reports` | Synthesize and persist final hiring report via Agent 7 |
+| `GET` | `/api/v1/reports/{id}` | Retrieve persisted hiring report by report UUID |
 
 ---
 
 ## 7. Running Tests
 
-### Automated Mocked Test Suite (Zero Quota Consumed)
-The automated suite runs 69 unit and route tests using mocked boundaries:
+### Automated Test Suite (Zero Quota Consumed)
+The automated test suite contains **89 unit, integration, database, and route tests**:
 ```powershell
 # From workspace root
 $env:PYTHONPATH = "backend"
 pytest backend/tests -v
 ```
 
+### Test Suite Structure
+- `backend/tests/test_database.py`: 8 database tests (engine, models, CRUD, cascades, constraints, rollbacks)
+- `backend/tests/test_interview_workflow.py`: 7 workflow service tests (session transitions, Agent 5 generation, Agent 6 answer scoring, auto-completion, report persistence)
+- `backend/tests/test_persistent_routes.py`: 5 endpoint integration tests (candidates, jobs, analysis, interviews, reports)
+- `backend/tests/test_agent_*.py`: 43 agent tests (import, prompts, schema validation across all 7 agents)
+- `backend/tests/test_api_routes.py`: 19 API route tests (stateless Phase 2 endpoints)
+- `backend/tests/test_pipeline.py`: Mocked orchestration pipeline test
+- `backend/tests/test_services.py`: Utility & service layer tests
+- `backend/tests/test_integration_optional.py`: Live Gemini API test (skipped by default)
+
 ### Optional Live Gemini Integration Test
-To run the live integration test that verifies actual Gemini Developer API connectivity:
 ```powershell
 $env:PYTHONPATH = "backend"
 $env:OPTHIRE_RUN_LIVE_TESTS = "1"
@@ -269,7 +256,13 @@ pytest backend/tests/test_integration_optional.py -v
 
 ## 8. Current Limitations & Next Steps
 
-### Limitations in Current Phase (Phase 2)
-1. **No Authentication**: The API currently has no user authentication or API key enforcement on endpoints; it is suitable for local development and private networks only.
-2. **Ephemeral Persistence**: Agent results and pipelines currently operate in memory and temporary files; persistent database storage (PostgreSQL/SQLAlchemy) is deferred to Phase 3.
-3. **Frontend Not Connected**: The React application in `frontend/` is not yet connected to the FastAPI backend endpoints.
+### Current Status (Phase 3 Completed)
+1. **Persistent Database Layer**: Complete with normalized models, Alembic migrations, SQLite default, and PostgreSQL support.
+2. **Stateful Interview Sessions**: Complete with automatic 21-question generation (Agent 5), rubric answer scoring (Agent 6), progress index tracking, duplicate prevention, and interview summary generation.
+3. **Persisted Reports**: Complete with Agent 7 executive report synthesis and database linkage.
+4. **Automated Test Coverage**: 89 passing tests with 100% mocked isolation.
+
+### Scope for Future Phases
+1. **Authentication & Authorization**: JWT token authentication, role-based access control (Recruiter, Hiring Manager, Candidate) deferred to Phase 4.
+2. **Frontend UI Integration**: Connect React frontend in `frontend/` to the REST API endpoints.
+3. **Real-time Updates**: WebSockets or SSE for interactive interview question streaming.

@@ -37,3 +37,4 @@ class MatchResultResponse(BaseModel):
     next_action: Optional[str] = Field(default="", description="Suggested recruiter next step")
 
     model_config = ConfigDict(extra="allow")
+

@@ -41,3 +41,4 @@ class SkillGapResponse(BaseModel):
     estimated_total_learning_time: Optional[str] = Field(default="", description="Total estimated upskilling time")
 
     model_config = ConfigDict(extra="allow")
+

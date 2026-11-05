@@ -51,3 +51,4 @@ def match_resume_endpoint(request: MatchRequest) -> MatchResultResponse:
         ) from exc
 
     return MatchResultResponse.model_validate(match_result)
+

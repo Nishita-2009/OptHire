@@ -19,6 +19,13 @@ frontend/build/
 .pnp
 .pnp.js
 
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+opthire.db
+backend/opthire.db
+
 # Environment variables & secrets
 .env
 *.env

@@ -94,3 +94,4 @@ class HiringReportResponse(BaseModel):
     )
 
     model_config = ConfigDict(extra="allow")
+

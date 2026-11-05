@@ -15,3 +15,4 @@ class PipelineResponse(BaseModel):
     interview: Dict[str, Any] = Field(..., description="Agent 5 interview generation output")
 
     model_config = ConfigDict(extra="allow")
+

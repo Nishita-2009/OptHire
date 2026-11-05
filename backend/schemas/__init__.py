@@ -41,6 +41,26 @@ from schemas.report import (
     HiringReportResponse,
 )
 from schemas.pipeline import PipelineResponse
+from schemas.entities import (
+    CandidateCreate,
+    CandidateResponse,
+    CandidateListResponse,
+    JobCreate,
+    JobEntityResponse,
+    JobEntityListResponse,
+    AnalysisRunCreate,
+    AnalysisRunResponse,
+    AnalysisRunListResponse,
+    InterviewSessionCreate,
+    InterviewQuestionItem,
+    InterviewSessionResponse,
+    InterviewSessionDetailResponse,
+    SubmitAnswerRequest,
+    SubmitAnswerResponse,
+    CompleteInterviewResponse,
+    GenerateHiringReportEntityRequest,
+    HiringReportEntityResponse,
+)
 
 __all__ = [
     "HealthResponse",
@@ -75,4 +95,24 @@ __all__ = [
     "FinalDecisionSection",
     "HiringReportResponse",
     "PipelineResponse",
+    "CandidateCreate",
+    "CandidateResponse",
+    "CandidateListResponse",
+    "JobCreate",
+    "JobEntityResponse",
+    "JobEntityListResponse",
+    "AnalysisRunCreate",
+    "AnalysisRunResponse",
+    "AnalysisRunListResponse",
+    "InterviewSessionCreate",
+    "InterviewQuestionItem",
+    "InterviewSessionResponse",
+    "InterviewSessionDetailResponse",
+    "SubmitAnswerRequest",
+    "SubmitAnswerResponse",
+    "CompleteInterviewResponse",
+    "GenerateHiringReportEntityRequest",
+    "HiringReportEntityResponse",
 ]
+
+

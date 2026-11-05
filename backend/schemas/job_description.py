@@ -31,3 +31,4 @@ class JobDescriptionParsedResponse(BaseModel):
     salary: Optional[str] = Field(default="", description="Salary range if specified")
 
     model_config = ConfigDict(extra="allow")
+

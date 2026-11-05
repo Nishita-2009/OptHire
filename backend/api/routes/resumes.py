@@ -49,3 +49,4 @@ def parse_resume_endpoint(
         ) from exc
 
     return ResumeParsedResponse.model_validate(parsed_result)
+

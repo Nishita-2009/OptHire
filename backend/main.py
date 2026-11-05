@@ -4,6 +4,7 @@ Configures CORS, standardized exception handling, and API routing.
 """
 import logging
 import os
+from contextlib import asynccontextmanager
 import uvicorn
 from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.exceptions import RequestValidationError
@@ -12,6 +13,7 @@ from fastapi.responses import JSONResponse
 
 from api.router import root_router
 from config.settings import settings
+from database.db import init_db
 
 # Configure structured application logging
 logging.basicConfig(
@@ -19,6 +21,17 @@ logging.basicConfig(
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
 )
 logger = logging.getLogger("opthire.api")
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Lifespan events: initialize database schema on startup."""
+    try:
+        init_db()
+        logger.info("Database initialized successfully.")
+    except Exception as exc:
+        logger.error("Database initialization failed on startup: %s", exc)
+    yield
 
 
 def create_app() -> FastAPI:
@@ -32,7 +45,9 @@ def create_app() -> FastAPI:
         ),
         docs_url="/docs",
         redoc_url="/redoc",
+        lifespan=lifespan,
     )
+
 
     # Configure CORS securely
     app.add_middleware(

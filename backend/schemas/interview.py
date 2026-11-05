@@ -103,3 +103,4 @@ class InterviewSummaryResponse(BaseModel):
     questions_answered: Optional[int] = Field(default=None, description="Total questions answered")
 
     model_config = ConfigDict(extra="allow")
+

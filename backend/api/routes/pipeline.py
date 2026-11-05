@@ -70,3 +70,4 @@ def run_pipeline_endpoint(
             shutil.rmtree(temp_output_dir, ignore_errors=True)
 
     return PipelineResponse.model_validate(result)
+

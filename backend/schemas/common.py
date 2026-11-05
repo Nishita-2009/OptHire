@@ -20,3 +20,4 @@ class ErrorResponse(BaseModel):
     code: int = Field(default=400, description="HTTP status code")
 
     model_config = ConfigDict(extra="allow")
+

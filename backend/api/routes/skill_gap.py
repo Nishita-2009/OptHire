@@ -60,3 +60,4 @@ def analyze_skill_gap_endpoint(request: SkillGapRequest) -> SkillGapResponse:
         ) from exc
 
     return SkillGapResponse.model_validate(gap_report)
+

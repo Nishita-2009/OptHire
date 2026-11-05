@@ -93,7 +93,153 @@ OptHire is an AI-powered talent acquisition and evaluation platform powered by G
 
 ---
 
-## Orchestrator & Pipelines
+## Phase 3 Database & Persistence Architecture
 
-- **`HiringPipeline` (`backend/orchestrator/hiring_pipeline.py`)**: Runs Agents 1 through 5 in automated sequence. Accepts PDF resume path and JD text, writes outputs to `outputs/`, and prepares the candidate for the interview stage.
-- **Compatibility Layer (`backend/workflows/hiring_pipeline.py`)**: Re-exports `HiringPipeline` for cross-package and workflow backward compatibility.
+OptHire utilizes **SQLAlchemy 2.x** with declarative ORM models and **Alembic** migrations. The database architecture is designed with strict separation between engine configuration, entity models, repository data access, and business services.
+
+### Entity Relationship Model
+
+```mermaid
+erDiagram
+    CANDIDATES ||--o{ ANALYSIS_RUNS : "initiates"
+    CANDIDATES ||--o{ INTERVIEW_SESSIONS : "participates in"
+    JOBS ||--o{ ANALYSIS_RUNS : "evaluated for"
+    JOBS ||--o{ INTERVIEW_SESSIONS : "targeted by"
+    ANALYSIS_RUNS ||--o| HIRING_REPORTS : "synthesizes"
+    ANALYSIS_RUNS ||--o{ INTERVIEW_SESSIONS : "links to"
+    INTERVIEW_SESSIONS ||--o{ INTERVIEW_QUESTIONS : "contains (21)"
+    INTERVIEW_SESSIONS ||--o{ HIRING_REPORTS : "informs"
+    INTERVIEW_QUESTIONS ||--o| INTERVIEW_ANSWERS : "evaluated by"
+
+    CANDIDATES {
+        string id PK "UUID"
+        string full_name
+        string email
+        string phone
+        text resume_text
+        json parsed_resume_data
+        datetime created_at
+        datetime updated_at
+    }
+
+    JOBS {
+        string id PK "UUID"
+        string title
+        string company
+        text description
+        json parsed_job_data
+        datetime created_at
+        datetime updated_at
+    }
+
+    ANALYSIS_RUNS {
+        string id PK "UUID"
+        string candidate_id FK
+        string job_id FK
+        string status "pending, completed, failed"
+        json resume_parse_result
+        json job_parse_result
+        json match_result
+        json skill_gap_result
+        text pipeline_error
+        datetime created_at
+        datetime completed_at
+    }
+
+    INTERVIEW_SESSIONS {
+        string id PK "UUID"
+        string candidate_id FK
+        string job_id FK
+        string analysis_run_id FK
+        string status "pending, in_progress, completed"
+        int current_question_index
+        int total_questions
+        datetime started_at
+        datetime completed_at
+        json final_summary
+        datetime created_at
+        datetime updated_at
+    }
+
+    INTERVIEW_QUESTIONS {
+        string id PK "UUID"
+        string interview_session_id FK
+        string question_identifier
+        text question_text
+        string category
+        string difficulty
+        text purpose
+        json expected_points
+        json evaluation_criteria
+        int sequence_number
+    }
+
+    INTERVIEW_ANSWERS {
+        string id PK "UUID"
+        string interview_question_id FK "UNIQUE"
+        text answer_text
+        json evaluation_result
+        float score
+        datetime submitted_at
+        datetime evaluated_at
+    }
+
+    HIRING_REPORTS {
+        string id PK "UUID"
+        string analysis_run_id FK
+        string interview_session_id FK
+        json report_data
+        string recommendation
+        float overall_score
+        datetime created_at
+        datetime updated_at
+    }
+```
+
+### Database Engines & SQLite-to-PostgreSQL Portability
+
+- **Default Database**: SQLite (`sqlite:///./opthire.db`), configured with:
+  - Safe automatic directory creation
+  - Multi-thread support (`check_same_thread=False`)
+  - Request-scoped dependency injection via FastAPI `get_db`
+- **PostgreSQL Ready**: Transition to PostgreSQL by setting the environment variable:
+  ```bash
+  DATABASE_URL=postgresql+psycopg2://user:password@localhost:5432/opthire
+  ```
+  Zero application code modifications required; connection pooling parameters (`pool_size=10`, `max_overflow=20`) activate automatically.
+
+### Alembic Migrations
+- Migration files are located in `backend/alembic/versions/`.
+- Configured with `render_as_batch=True` to support SQLite table schema alter operations seamlessly.
+- Initial schema version: `8121985b88eb_initial_normalized_schema.py`.
+
+---
+
+## Stateful Interview Session Workflow
+
+```mermaid
+stateDiagram-v2
+    [*] --> Pending: POST /api/v1/interviews
+    Pending --> InProgress: Questions Generated (Agent 5)
+    InProgress --> InProgress: POST /answers (Agent 6 scores answer)
+    InProgress --> Completed: All 21 questions answered OR POST /complete
+    Completed --> ReportGenerated: POST /api/v1/reports (Agent 7 synthesis)
+    ReportGenerated --> [*]
+```
+
+1. **Session Creation**:
+   - `POST /api/v1/interviews` accepts `candidate_id` and `job_id`.
+   - Invokes Agent 5 (`generate_interview`) to generate 21 personalized questions across 7 categories.
+   - Bulk inserts questions into `interview_questions` ordered by sequence.
+2. **Answer Submission & Scoring**:
+   - `POST /api/v1/interviews/{id}/answers` accepts `question_id` and `answer`.
+   - Checks question belongs to session and has not already been answered (enforced by DB unique constraint).
+   - Invokes Agent 6 (`evaluate_answer`) using the stored rubric and expected answer points.
+   - Saves scored answer in `interview_answers` and advances `current_question_index`.
+3. **Session Finalization**:
+   - Automatically upon answering the last question, or via `POST /api/v1/interviews/{id}/complete`.
+   - Aggregates all submitted answer evaluations and invokes Agent 6 (`generate_final_interview_summary`).
+   - Marks session `status="completed"`, records `completed_at`, and stores `final_summary`.
+4. **Persistent Hiring Report**:
+   - `POST /api/v1/reports` synthesizes candidate profile, match result, skill gap analysis, and interview summary via Agent 7 (`generate_hiring_report`).
+   - Persists final report in `hiring_reports` table linked to `analysis_run_id`.

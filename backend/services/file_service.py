@@ -98,3 +98,4 @@ def extract_text_from_upload(file: UploadFile) -> str:
         )
 
     return extracted_text.strip()
+

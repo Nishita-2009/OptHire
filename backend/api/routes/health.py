@@ -20,3 +20,4 @@ def get_health() -> HealthResponse:
         app="OptHire API",
         version="1.0.0",
     )
+

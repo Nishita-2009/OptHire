@@ -50,3 +50,4 @@ class ResumeParsedResponse(BaseModel):
     achievements: List[str] = Field(default_factory=list, description="Awards and achievements")
 
     model_config = ConfigDict(extra="allow")
+

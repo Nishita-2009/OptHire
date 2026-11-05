@@ -23,3 +23,4 @@ def build_hiring_report(
         skill_gap=skill_gap,
         interview_summary=interview_summary,
     )
+

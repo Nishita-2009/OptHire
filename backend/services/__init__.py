@@ -5,6 +5,7 @@ from services.file_service import (
     save_upload_to_temp_file,
     extract_text_from_upload,
 )
+from services.interview_service import InterviewService
 
 __all__ = [
     "GeminiService",
@@ -14,4 +15,7 @@ __all__ = [
     "validate_pdf_upload",
     "save_upload_to_temp_file",
     "extract_text_from_upload",
+    "InterviewService",
 ]
+
+
