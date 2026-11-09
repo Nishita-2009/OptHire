@@ -59,19 +59,28 @@ def create_analysis_endpoint(
         status="pending",
     )
 
-    resume_data = candidate.parsed_resume_data or {}
-    job_data = job.parsed_job_data
+    resume_data = dict(candidate.parsed_resume_data or {})
+    if candidate.full_name:
+        resume_data.setdefault("name", candidate.full_name)
+        resume_data.setdefault("candidate_name", candidate.full_name)
+
+    job_data = dict(job.parsed_job_data or {})
+    if job.title:
+        job_data.setdefault("job_title", job.title)
+        job_data.setdefault("title", job.title)
+    if job.company:
+        job_data.setdefault("company", job.company)
 
     # Parse JD if not already parsed
-    if not job_data and job.description:
+    if not job.parsed_job_data and job.description:
         try:
-            job_data = parse_job_description(job.description)
-            job.parsed_job_data = job_data
+            parsed_jd = parse_job_description(job.description)
+            job.parsed_job_data = parsed_jd
             db.commit()
+            for k, v in parsed_jd.items():
+                job_data.setdefault(k, v)
         except Exception as exc:
             logger.warning("Could not auto-parse job description for analysis %s: %s", analysis.id, exc)
-
-    job_data = job_data or {}
 
     # Run Matcher (Agent 3) and Skill Gap (Agent 4) if data exists
     if resume_data and job_data:

@@ -220,5 +220,8 @@ class HiringReportEntityResponse(BaseModel):
     interview_session_id: Optional[str] = None
     recommendation: str
     overall_score: Optional[float] = None
+    is_provisional: Optional[bool] = False
     report_data: Dict[str, Any]
     created_at: datetime
+
+

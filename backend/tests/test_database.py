@@ -251,3 +251,4 @@ def test_transaction_rollback(db_session):
     refetched = repository.get_candidate(db_session, candidate.id)
     assert refetched is not None
     assert refetched.full_name == "Valid Candidate"
+

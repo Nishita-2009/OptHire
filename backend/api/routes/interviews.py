@@ -243,3 +243,4 @@ def complete_interview_session_endpoint(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail=f"Interview completion failed: {str(exc)}",
         ) from exc
+

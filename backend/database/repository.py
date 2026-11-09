@@ -433,3 +433,4 @@ def get_report_by_analysis_id(db: Session, analysis_run_id: str) -> Optional[Hir
     """Retrieve the hiring report linked to a specific analysis run."""
     stmt = select(HiringReport).where(HiringReport.analysis_run_id == analysis_run_id)
     return db.scalars(stmt).first()
+

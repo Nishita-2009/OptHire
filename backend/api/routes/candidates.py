@@ -123,3 +123,4 @@ def get_candidate_analyses_endpoint(
         total=len(runs),
         runs=[AnalysisRunResponse.model_validate(r) for r in runs],
     )
+

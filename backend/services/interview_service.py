@@ -307,25 +307,117 @@ class InterviewService:
         job = repository.get_job(db, analysis.job_id)
 
         # Retrieve session summary if provided or linked
-        summary_data = {}
+        summary_data: Dict[str, Any] = {}
         target_session_id = interview_session_id
+        is_provisional = False
+        provisional_details: Dict[str, Any] = {}
+
         if not target_session_id:
             # Check if analysis has an interview session
             sessions = repository.list_interview_sessions(
                 db, candidate_id=analysis.candidate_id, job_id=analysis.job_id
             )
             for s in sessions:
-                if s.analysis_run_id == analysis_run_id and s.final_summary:
+                if s.analysis_run_id == analysis_run_id:
                     target_session_id = s.id
-                    summary_data = s.final_summary
                     break
-        else:
-            session = repository.get_interview_session(db, target_session_id)
-            if session and session.final_summary:
-                summary_data = session.final_summary
+            if not target_session_id and sessions:
+                target_session_id = sessions[0].id
 
-        resume_data = analysis.resume_parse_result or (candidate.parsed_resume_data if candidate else {}) or {}
-        job_data = analysis.job_parse_result or (job.parsed_job_data if job else {}) or {}
+        if target_session_id:
+            session = repository.get_interview_session(db, target_session_id)
+            if session:
+                if session.status == "completed" and session.final_summary:
+                    # Completed session: use the stored final Agent 6 interview summary
+                    summary_data = session.final_summary
+                    is_provisional = False
+                else:
+                    # Incomplete session (pending or in_progress): evaluate submitted answers
+                    answers = repository.get_interview_answers(db, target_session_id)
+                    total_submitted = len(answers)
+                    evaluated_answers = [
+                        a for a in answers if a.evaluation_result is not None and a.score is not None
+                    ]
+                    evaluated_count = len(evaluated_answers)
+                    valid_scores = [float(a.score) for a in evaluated_answers]
+                    is_provisional = True
+
+                    if total_submitted == 0:
+                        # Explicit state: No answers submitted (Not Started)
+                        summary_data = {
+                            "overall_interview_score": 0,
+                            "performance_level": "Not Started",
+                            "status": "not_started",
+                            "is_provisional": True,
+                            "questions_answered": 0,
+                            "total_questions": session.total_questions,
+                            "evaluated_count": 0,
+                            "interview_summary": (
+                                f"Interview session ({session.id}) was generated with {session.total_questions} "
+                                "questions, but candidate has not submitted any answers yet (Not Started)."
+                            ),
+                            "recommendation": "Consider",
+                            "next_action": f"Candidate needs to start the interview session and answer the {session.total_questions} questions.",
+                        }
+                        provisional_details = {
+                            "is_provisional": True,
+                            "session_status": session.status,
+                            "questions_answered": 0,
+                            "total_questions": session.total_questions,
+                            "evaluated_count": 0,
+                            "partial_interview_score": 0.0,
+                            "score_calculation": "No submitted answers; score set to 0.0.",
+                        }
+                    else:
+                        # In-progress session with answers: calculate partial interview score
+                        partial_score = round(sum(valid_scores) / len(valid_scores), 1) if valid_scores else 0.0
+                        calc_explanation = (
+                            f"Calculated as the arithmetic mean ({partial_score}/100) across {evaluated_count} "
+                            f"validly evaluated answer(s) out of {total_submitted} submitted ({session.total_questions} total questions in rubric)."
+                        )
+                        summary_data = {
+                            "overall_interview_score": partial_score,
+                            "performance_level": f"Provisional ({total_submitted}/{session.total_questions} questions answered)",
+                            "status": session.status,
+                            "is_provisional": True,
+                            "questions_answered": total_submitted,
+                            "total_questions": session.total_questions,
+                            "evaluated_count": evaluated_count,
+                            "score_calculation": calc_explanation,
+                            "interview_summary": (
+                                f"Provisional interview evaluation: Candidate has answered {total_submitted} of "
+                                f"{session.total_questions} questions ({evaluated_count} evaluated) with an average "
+                                f"evaluated score of {partial_score}/100. This assessment is incomplete and provisional; "
+                                "the interview session remains open."
+                            ),
+                            "evaluations_summary": [a.evaluation_result for a in evaluated_answers],
+                            "recommendation": "Consider",
+                            "next_action": f"Candidate should complete the remaining {session.total_questions - total_submitted} interview questions.",
+                        }
+                        provisional_details = {
+                            "is_provisional": True,
+                            "session_status": session.status,
+                            "questions_answered": total_submitted,
+                            "total_questions": session.total_questions,
+                            "evaluated_count": evaluated_count,
+                            "partial_interview_score": partial_score,
+                            "score_calculation": calc_explanation,
+                        }
+
+        # Authoritative entity metadata overrides stale or missing parsed JSON fields
+        resume_data = dict(analysis.resume_parse_result or (candidate.parsed_resume_data if candidate else {}) or {})
+        if candidate and candidate.full_name:
+            resume_data["name"] = candidate.full_name
+            resume_data["candidate_name"] = candidate.full_name
+
+        job_data = dict(analysis.job_parse_result or (job.parsed_job_data if job else {}) or {})
+        if job:
+            if job.title:
+                job_data["job_title"] = job.title
+                job_data["title"] = job.title
+            if job.company:
+                job_data["company"] = job.company
+
         match_data = analysis.match_result or {}
         skill_gap_data = analysis.skill_gap_result or {}
 
@@ -338,9 +430,37 @@ class InterviewService:
             interview_summary=summary_data,
         )
 
+        # Enforce authoritative database metadata on report output
+        if "candidate" in report and isinstance(report["candidate"], dict):
+            if candidate and candidate.full_name:
+                report["candidate"]["name"] = candidate.full_name
+            if job and job.title:
+                report["candidate"]["target_role"] = job.title
+
+        # Enforce provisional metadata & score adjustments on report output
+        scores = report.setdefault("scores", {})
+        if is_provisional:
+            report["is_provisional"] = True
+            report["provisional_details"] = provisional_details
+
+            if provisional_details.get("questions_answered", 0) > 0:
+                part_score = provisional_details.get("partial_interview_score", 0.0)
+                scores["interview_score"] = part_score
+                # In provisional reports, cap decision confidence appropriately
+                curr_conf = scores.get("decision_confidence", 50)
+                if curr_conf > 60:
+                    scores["decision_confidence"] = 60
+                if report.get("report_title") == "OptHire AI Hiring Report":
+                    report["report_title"] = "OptHire AI Hiring Report (Provisional - In-Progress Interview)"
+            else:
+                scores["interview_score"] = 0.0
+                if scores.get("decision_confidence", 50) > 50:
+                    scores["decision_confidence"] = 50
+        else:
+            report["is_provisional"] = False
+
         final_decision = report.get("final_decision", {})
         recommendation = final_decision.get("recommendation", "Consider")
-        scores = report.get("scores", {})
         overall_score = scores.get("final_hiring_score")
 
         saved_report = repository.create_hiring_report(
@@ -358,6 +478,8 @@ class InterviewService:
             "interview_session_id": saved_report.interview_session_id,
             "recommendation": saved_report.recommendation,
             "overall_score": saved_report.overall_score,
+            "is_provisional": is_provisional,
             "report_data": saved_report.report_data,
             "created_at": saved_report.created_at,
         }
+

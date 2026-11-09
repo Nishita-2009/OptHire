@@ -292,3 +292,231 @@ def test_generate_and_save_hiring_report(
     db_report = repository.get_hiring_report(db_session, report_result["id"])
     assert db_report is not None
     assert db_report.analysis_run_id == analysis.id
+    assert db_report.is_provisional is False
+
+
+def test_report_authoritative_metadata_overrides_stale_parsed_json(
+    monkeypatch, db_session, synthetic_resume, synthetic_jd, synthetic_match, synthetic_skill_gap, synthetic_summary, synthetic_report
+):
+    """Ensure database entity metadata (full_name, title) authoritatively overrides stale parsed JSON."""
+    stale_resume = dict(synthetic_resume)
+    stale_resume["name"] = "Stale Conflicting Name"
+
+    stale_jd = dict(synthetic_jd)
+    stale_jd["job_title"] = "Stale Conflicting Role"
+
+    candidate = repository.create_candidate(db_session, full_name="Alex Morgan", parsed_resume_data=stale_resume)
+    job = repository.create_job(db_session, title="Junior Python Developer", company="TechNova Solutions", description="Python development", parsed_job_data=stale_jd)
+    analysis = repository.create_analysis_run(
+        db_session,
+        candidate_id=candidate.id,
+        job_id=job.id,
+        status="completed",
+        resume_parse_result=stale_resume,
+        job_parse_result=stale_jd,
+        match_result=synthetic_match,
+        skill_gap_result=synthetic_skill_gap,
+    )
+    session = repository.create_interview_session(
+        db_session, candidate_id=candidate.id, job_id=job.id, analysis_run_id=analysis.id, status="completed"
+    )
+    session.final_summary = synthetic_summary
+    db_session.commit()
+
+    # Model might echo synthetic report which had Alex Morgan / Software Engineer
+    mock_rep = dict(synthetic_report)
+    mock_rep["candidate"] = dict(mock_rep["candidate"])
+    mock_rep["candidate"]["name"] = "Model Echoed Name"
+    mock_rep["candidate"]["target_role"] = "Model Echoed Role"
+
+    monkeypatch.setattr(hr_generator, "llm", MockLLM(json.dumps(mock_rep)))
+
+    report_result = InterviewService.generate_and_save_hiring_report(
+        db=db_session,
+        analysis_run_id=analysis.id,
+        interview_session_id=session.id,
+    )
+
+    # Authoritative entity metadata must prevail
+    report_data = report_result["report_data"]
+    assert report_data["candidate"]["name"] == "Alex Morgan"
+    assert report_data["candidate"]["target_role"] == "Junior Python Developer"
+    assert report_result["is_provisional"] is False
+
+
+def test_report_with_one_evaluated_answer_score_85(
+    monkeypatch, db_session, synthetic_resume, synthetic_jd, synthetic_match, synthetic_skill_gap, synthetic_report
+):
+    """
+    Test user's exact observed scenario:
+    - 21 questions total
+    - 1 answer submitted with score 85.0
+    - Session remains in_progress
+    - Report is clearly generated as Provisional with interview_score=85.0
+    """
+    candidate = repository.create_candidate(db_session, full_name="Alex Morgan", parsed_resume_data=synthetic_resume)
+    job = repository.create_job(db_session, title="Junior Python Developer", description="Junior Python engineer role", parsed_job_data=synthetic_jd)
+    analysis = repository.create_analysis_run(
+        db_session,
+        candidate_id=candidate.id,
+        job_id=job.id,
+        status="completed",
+        resume_parse_result=synthetic_resume,
+        job_parse_result=synthetic_jd,
+        match_result=synthetic_match,
+        skill_gap_result=synthetic_skill_gap,
+    )
+
+    # Create session with 21 questions
+    session = repository.create_interview_session(
+        db_session, candidate_id=candidate.id, job_id=job.id, analysis_run_id=analysis.id, status="in_progress"
+    )
+    questions_data = [
+        {"id": f"Q_{i:02d}", "question": f"Question {i}", "category": "Tech", "difficulty": "medium"}
+        for i in range(1, 22)
+    ]
+    created_questions = repository.add_interview_questions(db_session, session.id, questions_data)
+    assert len(created_questions) == 21
+
+    # Submit exactly 1 answer with evaluation score 85.0
+    q1 = created_questions[0]
+    eval_result = {
+        "score": 85,
+        "rating": "Strong",
+        "answer_summary": "Accurately explains async/await in FastAPI.",
+        "strengths": ["Clear definition of coroutines and event loop non-blocking behavior."],
+        "missing_points": [],
+        "feedback": "Concise and accurate explanation.",
+        "question_id": q1.question_identifier,
+        "question": q1.question_text,
+        "candidate_answer": "In Python, async and await are used for asynchronous programming without blocking the event loop.",
+        "category": q1.category,
+    }
+    repository.save_interview_answer(
+        db=db_session,
+        question_id=q1.id,
+        answer_text="In Python, async and await are used for asynchronous programming without blocking the event loop.",
+        evaluation_result=eval_result,
+        score=85.0,
+    )
+
+    # Ensure session remains in_progress
+    db_session.refresh(session)
+    assert session.status == "in_progress"
+    assert session.final_summary is None
+
+    mock_rep = dict(synthetic_report)
+    monkeypatch.setattr(hr_generator, "llm", MockLLM(json.dumps(mock_rep)))
+
+    report_result = InterviewService.generate_and_save_hiring_report(
+        db=db_session,
+        analysis_run_id=analysis.id,
+        interview_session_id=session.id,
+    )
+
+    # 1. Provisional report flag and details
+    assert report_result["is_provisional"] is True
+    report_data = report_result["report_data"]
+    assert report_data["is_provisional"] is True
+    assert "Provisional" in report_data["report_title"]
+
+    prov = report_data["provisional_details"]
+    assert prov["is_provisional"] is True
+    assert prov["session_status"] == "in_progress"
+    assert prov["questions_answered"] == 1
+    assert prov["total_questions"] == 21
+    assert prov["evaluated_count"] == 1
+    assert prov["partial_interview_score"] == 85.0
+    assert "85.0/100" in prov["score_calculation"]
+
+    # 2. Score and confidence
+    assert report_data["scores"]["interview_score"] == 85.0
+    assert report_data["scores"]["decision_confidence"] <= 60
+
+    # 3. Authoritative candidate and job metadata
+    assert report_data["candidate"]["name"] == "Alex Morgan"
+    assert report_data["candidate"]["target_role"] == "Junior Python Developer"
+
+    # 4. Session MUST remain open so candidate can answer remaining questions
+    db_session.refresh(session)
+    assert session.status == "in_progress"
+    assert session.completed_at is None
+
+
+def test_report_zero_answer_session_not_started(
+    monkeypatch, db_session, synthetic_resume, synthetic_jd, synthetic_match, synthetic_skill_gap, synthetic_report
+):
+    """Ensure a session with 0 answers is reported as Not Started without claiming interview occurred."""
+    candidate = repository.create_candidate(db_session, full_name="Bob", parsed_resume_data=synthetic_resume)
+    job = repository.create_job(db_session, title="Dev", description="Python dev position", parsed_job_data=synthetic_jd)
+    analysis = repository.create_analysis_run(
+        db_session, candidate_id=candidate.id, job_id=job.id, status="completed",
+        resume_parse_result=synthetic_resume, job_parse_result=synthetic_jd,
+        match_result=synthetic_match, skill_gap_result=synthetic_skill_gap,
+    )
+    session = repository.create_interview_session(
+        db_session, candidate_id=candidate.id, job_id=job.id, analysis_run_id=analysis.id, status="pending"
+    )
+    repository.add_interview_questions(db_session, session.id, [{"id": "Q1", "question": "Q?", "category": "General", "difficulty": "easy"}])
+
+    monkeypatch.setattr(hr_generator, "llm", MockLLM(json.dumps(synthetic_report)))
+
+    report_result = InterviewService.generate_and_save_hiring_report(
+        db=db_session,
+        analysis_run_id=analysis.id,
+        interview_session_id=session.id,
+    )
+
+    assert report_result["is_provisional"] is True
+    prov = report_result["report_data"]["provisional_details"]
+    assert prov["questions_answered"] == 0
+    assert prov["partial_interview_score"] == 0.0
+    assert report_result["report_data"]["scores"]["interview_score"] == 0
+
+
+def test_report_missing_or_invalid_evaluation_scores(
+    monkeypatch, db_session, synthetic_resume, synthetic_jd, synthetic_match, synthetic_skill_gap, synthetic_report
+):
+    """Ensure partial score calculation uses only valid, non-null evaluation scores."""
+    candidate = repository.create_candidate(db_session, full_name="Charlie", parsed_resume_data=synthetic_resume)
+    job = repository.create_job(db_session, title="Dev", description="Python dev position", parsed_job_data=synthetic_jd)
+    analysis = repository.create_analysis_run(
+        db_session, candidate_id=candidate.id, job_id=job.id, status="completed",
+        resume_parse_result=synthetic_resume, job_parse_result=synthetic_jd,
+        match_result=synthetic_match, skill_gap_result=synthetic_skill_gap,
+    )
+    session = repository.create_interview_session(
+        db_session, candidate_id=candidate.id, job_id=job.id, analysis_run_id=analysis.id, status="in_progress"
+    )
+    qs = repository.add_interview_questions(
+        db_session, session.id,
+        [
+            {"id": "Q1", "question": "Q1?", "category": "Tech", "difficulty": "easy"},
+            {"id": "Q2", "question": "Q2?", "category": "Tech", "difficulty": "easy"},
+        ]
+    )
+
+    # Answer 1 has valid evaluation score 80.0
+    repository.save_interview_answer(
+        db=db_session, question_id=qs[0].id, answer_text="Ans 1", evaluation_result={"score": 80}, score=80.0
+    )
+    # Answer 2 has no evaluation result or score
+    repository.save_interview_answer(
+        db=db_session, question_id=qs[1].id, answer_text="Ans 2", evaluation_result=None, score=None
+    )
+
+    monkeypatch.setattr(hr_generator, "llm", MockLLM(json.dumps(synthetic_report)))
+
+    report_result = InterviewService.generate_and_save_hiring_report(
+        db=db_session,
+        analysis_run_id=analysis.id,
+        interview_session_id=session.id,
+    )
+
+    prov = report_result["report_data"]["provisional_details"]
+    assert prov["questions_answered"] == 2
+    assert prov["evaluated_count"] == 1
+    # Only the valid score (80.0) is factored in
+    assert prov["partial_interview_score"] == 80.0
+    assert report_result["report_data"]["scores"]["interview_score"] == 80.0
+

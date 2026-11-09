@@ -63,10 +63,11 @@ IMPORTANT RULES:
 5. Consider both strengths and risks.
 6. A high resume score must not automatically mean a strong interview result.
 7. A strong interview must not erase major mandatory job requirement gaps.
-8. If the interview was incomplete, mention that clearly and reduce confidence.
+8. If the interview was incomplete or provisional (with evaluated answers provided), report the partial interview score, clearly state that the interview is in progress, mention the number of answered questions vs total questions, and reduce decision confidence accordingly. Do NOT state that the interview was not conducted when evaluated answers or a provisional summary are provided. If the interview summary indicates 'Not Started', clearly report it as not started.
 9. Return ONLY valid JSON.
 10. Do not use markdown.
 11. Do not use code fences.
+12. The candidate name and target role specified in the candidate resume and target job description are authoritative; you must populate candidate.name and candidate.target_role directly from them.
 
 Generate a final decision using one of:
 

@@ -191,3 +191,12 @@ class HiringReport(Base):
     # Relationships
     analysis_run = relationship("AnalysisRun", back_populates="hiring_report")
     interview_session = relationship("InterviewSession", back_populates="hiring_reports")
+
+    @property
+    def is_provisional(self) -> bool:
+        """Indicates whether this report is provisional due to an incomplete interview session."""
+        if isinstance(self.report_data, dict):
+            return bool(self.report_data.get("is_provisional", False))
+        return False
+
+

@@ -65,3 +65,4 @@ def init_db(engine_instance: Engine = engine) -> None:
     """
     import database.models  # Ensure all model definitions are registered
     Base.metadata.create_all(bind=engine_instance)
+

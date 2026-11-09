@@ -268,3 +268,88 @@ def test_persistent_reports_routes(
     by_analysis = test_client.get(f"/api/v1/analysis/{analysis_id}/report")
     assert by_analysis.status_code == 200
     assert by_analysis.json()["id"] == report_id
+
+
+def test_api_provisional_report_for_in_progress_interview(
+    monkeypatch, test_client, synthetic_resume, synthetic_jd, synthetic_match, synthetic_skill_gap, synthetic_report
+):
+    """
+    Test API generation of provisional report for an in-progress interview session.
+    Verifies that session remains open and report accurately indicates provisional status.
+    """
+    cand_resp = test_client.post(
+        "/api/v1/candidates",
+        json={"full_name": "Alex Morgan", "parsed_resume_data": synthetic_resume},
+    )
+    cand_id = cand_resp.json()["id"]
+
+    job_resp = test_client.post(
+        "/api/v1/jobs",
+        json={"title": "Junior Python Developer", "description": "Backend API development with FastAPI", "parsed_job_data": synthetic_jd},
+    )
+    job_id = job_resp.json()["id"]
+
+    monkeypatch.setattr(rm_parser, "llm", MockLLM(json.dumps(synthetic_match)))
+    monkeypatch.setattr(sg_parser, "llm", MockLLM(json.dumps(synthetic_skill_gap)))
+
+    analysis_id = test_client.post("/api/v1/analysis", json={"candidate_id": cand_id, "job_id": job_id}).json()["id"]
+
+    # Create interview session with custom questions
+    session_resp = test_client.post(
+        "/api/v1/interviews",
+        json={
+            "candidate_id": cand_id,
+            "job_id": job_id,
+            "analysis_run_id": analysis_id,
+            "generate_questions": False,
+            "custom_questions": [
+                {"id": "Q1", "question": "Explain async/await.", "category": "Tech", "difficulty": "medium"},
+                {"id": "Q2", "question": "Explain FastAPI routers.", "category": "Tech", "difficulty": "medium"},
+            ],
+        },
+    )
+    session_id = session_resp.json()["session_id"]
+
+    # Submit 1 answer with evaluation score 85.0
+    mock_eval = {
+        "score": 85.0,
+        "rating": "Strong",
+        "answer_summary": "Great explanation.",
+        "strengths": ["Asyncio understanding"],
+        "missing_points": [],
+        "feedback": "Well done.",
+    }
+    monkeypatch.setattr(ie_evaluator, "llm", MockLLM(json.dumps(mock_eval)))
+    q1_id = session_resp.json()["questions"][0]["id"]
+    test_client.post(
+        f"/api/v1/interviews/{session_id}/answers",
+        json={"question_id": q1_id, "answer": "Async allows non-blocking execution."},
+    )
+
+    # Generate persistent report
+    monkeypatch.setattr(hr_generator, "llm", MockLLM(json.dumps(synthetic_report)))
+    rep_resp = test_client.post(
+        "/api/v1/reports",
+        json={"analysis_run_id": analysis_id, "interview_session_id": session_id},
+    )
+    assert rep_resp.status_code == 201
+    rep_data = rep_resp.json()
+    assert rep_data["is_provisional"] is True
+    report_id = rep_data["id"]
+
+    # Verify report details via GET /reports/{id}
+    get_rep = test_client.get(f"/api/v1/reports/{report_id}")
+    assert get_rep.status_code == 200
+    report_body = get_rep.json()["report_data"]
+    assert report_body["is_provisional"] is True
+    assert report_body["provisional_details"]["questions_answered"] == 1
+    assert report_body["provisional_details"]["total_questions"] == 2
+    assert report_body["provisional_details"]["partial_interview_score"] == 85.0
+    assert report_body["candidate"]["name"] == "Alex Morgan"
+    assert report_body["candidate"]["target_role"] == "Junior Python Developer"
+
+    # Verify session remains in_progress
+    sess_status = test_client.get(f"/api/v1/interviews/{session_id}").json()
+    assert sess_status["status"] == "in_progress"
+    assert sess_status["completed_at"] is None
+
