@@ -77,12 +77,21 @@ def create_job_endpoint(
     db: Session = Depends(get_db),
 ) -> JobEntityResponse:
     try:
+        parsed_jd = payload.parsed_job_data
+        if parsed_jd:
+            parsed_jd = dict(parsed_jd)
+            if payload.title:
+                parsed_jd["job_title"] = payload.title
+                parsed_jd["title"] = payload.title
+            if payload.company:
+                parsed_jd["company"] = payload.company
+
         job = repository.create_job(
             db=db,
             title=payload.title,
             company=payload.company,
             description=payload.description,
-            parsed_job_data=payload.parsed_job_data,
+            parsed_job_data=parsed_jd,
         )
         return JobEntityResponse.model_validate(job)
     except Exception as exc:

@@ -3,8 +3,10 @@ Interview session workflow service.
 Coordinates stateful candidate interview sessions with Agent 5 (Interview Generator),
 Agent 6 (Interview Evaluator), and Agent 7 (Hiring Report Generator).
 """
+import copy
 import logging
-from typing import Any, Dict, List, Optional
+import re
+from typing import Any, Dict, List, Optional, Set
 from sqlalchemy.orm import Session
 
 from database.models import Candidate, Job, AnalysisRun, InterviewSession, InterviewQuestion, InterviewAnswer
@@ -16,8 +18,288 @@ from agents.hiring_report import generate_hiring_report
 logger = logging.getLogger("opthire.interview_service")
 
 
+GENERIC_ROLES = [
+    "Backend Developer",
+    "Frontend Developer",
+    "Full Stack Developer",
+    "Full-Stack Developer",
+    "Software Engineer",
+    "Software Developer",
+    "Python Developer",
+    "Web Developer",
+    "Data Engineer",
+]
+
+
 class InterviewService:
     """Service orchestrating persistent interview session lifecycles."""
+
+    @classmethod
+    def clean_narrative_text(
+        cls,
+        text: str,
+        candidate_name: Optional[str] = None,
+        job_title: Optional[str] = None,
+        company: Optional[str] = None,
+        stale_titles: Optional[Set[str]] = None,
+        stale_names: Optional[Set[str]] = None,
+        stale_companies: Optional[Set[str]] = None,
+        is_candidate_summary: bool = False,
+        is_executive_summary: bool = False,
+    ) -> str:
+        """
+        Deterministically sanitizes a narrative text snippet by replacing stale/conflicting
+        job titles and candidate names with authoritative values while preserving phrasing and substance.
+        """
+        if not text or not isinstance(text, str):
+            return text
+
+        result = text
+        stale_set = set(stale_titles or set())
+
+        # If job_title is authoritative, replace stale or generic conflicting titles
+        if job_title:
+            candidates_to_replace = set(stale_set)
+            for generic in GENERIC_ROLES:
+                if generic.lower() != job_title.lower() and generic.lower() in result.lower():
+                    if generic.lower() not in job_title.lower():
+                        candidates_to_replace.add(generic)
+
+            sorted_stale = sorted([s for s in candidates_to_replace if s and s.strip()], key=len, reverse=True)
+
+            for stale in sorted_stale:
+                if stale.lower() == job_title.lower():
+                    continue
+
+                # 1. Handle seniority prefixes (junior, senior, entry-level, intern, trainee, etc.)
+                is_seniority_in_job = job_title.lower().startswith(
+                    ("junior", "senior", "lead", "entry-level", "entry level", "intern", "trainee", "associate")
+                )
+                for p in ["entry-level", "entry level", "junior", "senior", "lead", "intern", "trainee", "associate"]:
+                    pattern_prefix = re.compile(rf"\b{re.escape(p)}\s+{re.escape(stale)}\b", re.IGNORECASE)
+                    if is_seniority_in_job:
+                        result = pattern_prefix.sub(job_title, result)
+                    else:
+                        result = pattern_prefix.sub(f"{p} {job_title}", result)
+
+                # 2. Handle plain stale title with boundary and substring protection
+                if stale.lower() in job_title.lower():
+                    idx = job_title.lower().find(stale.lower())
+                    prefix = job_title[:idx].strip()
+                    if prefix:
+                        pattern_plain = re.compile(rf"(?<!{re.escape(prefix)}\s)\b{re.escape(stale)}\b", re.IGNORECASE)
+                        result = pattern_plain.sub(job_title, result)
+                    else:
+                        suffix = job_title[idx + len(stale):].strip()
+                        pattern_plain = re.compile(rf"\b{re.escape(stale)}\b(?!\s{re.escape(suffix)})", re.IGNORECASE)
+                        result = pattern_plain.sub(job_title, result)
+                else:
+                    pattern_plain = re.compile(rf"\b{re.escape(stale)}\b", re.IGNORECASE)
+                    result = pattern_plain.sub(job_title, result)
+
+            # Ensure candidate_summary references authoritative job_title
+            if is_candidate_summary and job_title.lower() not in result.lower():
+                if result.lower().startswith("the candidate "):
+                    result = f"For the {job_title} position, the candidate " + result[14:]
+                else:
+                    result = f"For the {job_title} position, {result}"
+
+            # Ensure executive_summary references authoritative job_title
+            if is_executive_summary and job_title.lower() not in result.lower():
+                result = f"For the {job_title} role, {result}"
+
+        # Handle candidate name
+        if candidate_name:
+            if stale_names:
+                for sn in stale_names:
+                    if sn and sn.lower() != candidate_name.lower():
+                        pattern_sn = re.compile(rf"\b{re.escape(sn)}\b", re.IGNORECASE)
+                        result = pattern_sn.sub(candidate_name, result)
+            if is_executive_summary and result.startswith("The candidate "):
+                result = candidate_name + " " + result[14:]
+
+        # Handle company
+        if company and stale_companies:
+            for sc in stale_companies:
+                if sc and sc.lower() != company.lower():
+                    pattern_sc = re.compile(rf"\b{re.escape(sc)}\b", re.IGNORECASE)
+                    result = pattern_sc.sub(company, result)
+
+        return result
+
+    @classmethod
+    def harmonize_report_narratives(
+        cls,
+        report: Dict[str, Any],
+        candidate_name: Optional[str] = None,
+        job_title: Optional[str] = None,
+        company: Optional[str] = None,
+        stale_titles: Optional[Set[str]] = None,
+        stale_names: Optional[Set[str]] = None,
+        stale_companies: Optional[Set[str]] = None,
+    ) -> Dict[str, Any]:
+        """
+        Deterministically harmonizes structured fields and narrative sections of a hiring report
+        with authoritative database metadata (candidate_name, job_title, company), eliminating
+        conflicting, stale, or generic titles from LLM outputs.
+        """
+        if not isinstance(report, dict):
+            return report
+
+        stale_titles = set(stale_titles or set())
+        stale_names = set(stale_names or set())
+        stale_companies = set(stale_companies or set())
+
+        # Structured candidate section
+        candidate_section = report.setdefault("candidate", {})
+        if isinstance(candidate_section, dict):
+            orig_name = candidate_section.get("name")
+            if orig_name and candidate_name and orig_name.lower() != candidate_name.lower():
+                stale_names.add(orig_name)
+            if candidate_name:
+                candidate_section["name"] = candidate_name
+
+            orig_role = candidate_section.get("target_role")
+            if orig_role and job_title and orig_role.lower() != job_title.lower():
+                stale_titles.add(orig_role)
+            if job_title:
+                candidate_section["target_role"] = job_title
+
+            if "candidate_summary" in candidate_section:
+                candidate_section["candidate_summary"] = cls.clean_narrative_text(
+                    candidate_section["candidate_summary"],
+                    candidate_name=candidate_name,
+                    job_title=job_title,
+                    company=company,
+                    stale_titles=stale_titles,
+                    stale_names=stale_names,
+                    stale_companies=stale_companies,
+                    is_candidate_summary=True,
+                )
+
+        # Executive summary
+        if "executive_summary" in report:
+            report["executive_summary"] = cls.clean_narrative_text(
+                report["executive_summary"],
+                candidate_name=candidate_name,
+                job_title=job_title,
+                company=company,
+                stale_titles=stale_titles,
+                stale_names=stale_names,
+                stale_companies=stale_companies,
+                is_executive_summary=True,
+            )
+
+        # Resume evaluation section
+        resume_sec = report.get("resume_evaluation")
+        if isinstance(resume_sec, dict):
+            if "summary" in resume_sec:
+                resume_sec["summary"] = cls.clean_narrative_text(
+                    resume_sec["summary"],
+                    candidate_name=candidate_name,
+                    job_title=job_title,
+                    company=company,
+                    stale_titles=stale_titles,
+                    stale_names=stale_names,
+                    stale_companies=stale_companies,
+                )
+            if "key_strengths" in resume_sec and isinstance(resume_sec["key_strengths"], list):
+                resume_sec["key_strengths"] = [
+                    cls.clean_narrative_text(
+                        s,
+                        candidate_name=candidate_name,
+                        job_title=job_title,
+                        company=company,
+                        stale_titles=stale_titles,
+                        stale_names=stale_names,
+                        stale_companies=stale_companies,
+                    )
+                    for s in resume_sec["key_strengths"]
+                ]
+            if "key_weaknesses" in resume_sec and isinstance(resume_sec["key_weaknesses"], list):
+                resume_sec["key_weaknesses"] = [
+                    cls.clean_narrative_text(
+                        s,
+                        candidate_name=candidate_name,
+                        job_title=job_title,
+                        company=company,
+                        stale_titles=stale_titles,
+                        stale_names=stale_names,
+                        stale_companies=stale_companies,
+                    )
+                    for s in resume_sec["key_weaknesses"]
+                ]
+
+        # Interview evaluation section
+        interview_sec = report.get("interview_evaluation")
+        if isinstance(interview_sec, dict) and "summary" in interview_sec:
+            interview_sec["summary"] = cls.clean_narrative_text(
+                interview_sec["summary"],
+                candidate_name=candidate_name,
+                job_title=job_title,
+                company=company,
+                stale_titles=stale_titles,
+                stale_names=stale_names,
+                stale_companies=stale_companies,
+            )
+
+        # Skill gap evaluation section
+        skill_sec = report.get("skill_gap_evaluation")
+        if isinstance(skill_sec, dict) and "development_summary" in skill_sec:
+            skill_sec["development_summary"] = cls.clean_narrative_text(
+                skill_sec["development_summary"],
+                candidate_name=candidate_name,
+                job_title=job_title,
+                company=company,
+                stale_titles=stale_titles,
+                stale_names=stale_names,
+                stale_companies=stale_companies,
+            )
+
+        # Final decision section
+        decision_sec = report.get("final_decision")
+        if isinstance(decision_sec, dict):
+            for k in ["reasoning", "next_action"]:
+                if k in decision_sec:
+                    decision_sec[k] = cls.clean_narrative_text(
+                        decision_sec[k],
+                        candidate_name=candidate_name,
+                        job_title=job_title,
+                        company=company,
+                        stale_titles=stale_titles,
+                        stale_names=stale_names,
+                        stale_companies=stale_companies,
+                    )
+
+        # Recruiter notes
+        if "recruiter_notes" in report:
+            report["recruiter_notes"] = cls.clean_narrative_text(
+                report["recruiter_notes"],
+                candidate_name=candidate_name,
+                job_title=job_title,
+                company=company,
+                stale_titles=stale_titles,
+                stale_names=stale_names,
+                stale_companies=stale_companies,
+            )
+
+        # Key reasons lists
+        for list_key in ["key_reasons_to_hire", "key_reasons_for_caution"]:
+            if list_key in report and isinstance(report[list_key], list):
+                report[list_key] = [
+                    cls.clean_narrative_text(
+                        s,
+                        candidate_name=candidate_name,
+                        job_title=job_title,
+                        company=company,
+                        stale_titles=stale_titles,
+                        stale_names=stale_names,
+                        stale_companies=stale_companies,
+                    )
+                    for s in report[list_key]
+                ]
+
+        return report
 
     @staticmethod
     def create_session(
@@ -404,6 +686,41 @@ class InterviewService:
                             "score_calculation": calc_explanation,
                         }
 
+        # Collect known stale / conflicting entity metadata
+        stale_titles: Set[str] = set()
+        stale_names: Set[str] = set()
+        stale_companies: Set[str] = set()
+
+        if candidate and candidate.full_name:
+            if analysis.resume_parse_result:
+                rn = analysis.resume_parse_result.get("name") or analysis.resume_parse_result.get("candidate_name")
+                if rn and rn.lower() != candidate.full_name.lower():
+                    stale_names.add(rn)
+            if candidate.parsed_resume_data:
+                rn = candidate.parsed_resume_data.get("name") or candidate.parsed_resume_data.get("candidate_name")
+                if rn and rn.lower() != candidate.full_name.lower():
+                    stale_names.add(rn)
+
+        if job and job.title:
+            if analysis.job_parse_result:
+                jt = analysis.job_parse_result.get("job_title") or analysis.job_parse_result.get("title")
+                if jt and jt.lower() != job.title.lower():
+                    stale_titles.add(jt)
+            if job.parsed_job_data:
+                jt = job.parsed_job_data.get("job_title") or job.parsed_job_data.get("title")
+                if jt and jt.lower() != job.title.lower():
+                    stale_titles.add(jt)
+
+        if job and job.company:
+            if analysis.job_parse_result:
+                jc = analysis.job_parse_result.get("company")
+                if jc and jc.lower() != job.company.lower():
+                    stale_companies.add(jc)
+            if job.parsed_job_data:
+                jc = job.parsed_job_data.get("company")
+                if jc and jc.lower() != job.company.lower():
+                    stale_companies.add(jc)
+
         # Authoritative entity metadata overrides stale or missing parsed JSON fields
         resume_data = dict(analysis.resume_parse_result or (candidate.parsed_resume_data if candidate else {}) or {})
         if candidate and candidate.full_name:
@@ -418,7 +735,19 @@ class InterviewService:
             if job.company:
                 job_data["company"] = job.company
 
-        match_data = analysis.match_result or {}
+        # Pre-clean match_data narrative fields so Agent 7 does not ingest conflicting titles
+        match_data = copy.deepcopy(analysis.match_result or {})
+        if match_data and job and job.title:
+            for k in ["candidate_summary", "recommendation", "next_action"]:
+                if k in match_data and isinstance(match_data[k], str):
+                    match_data[k] = InterviewService.clean_narrative_text(
+                        match_data[k],
+                        candidate_name=candidate.full_name if candidate else None,
+                        job_title=job.title,
+                        company=job.company if job else None,
+                        stale_titles=stale_titles,
+                    )
+
         skill_gap_data = analysis.skill_gap_result or {}
 
         logger.info("Generating final hiring report via Agent 7 for analysis %s", analysis_run_id)
@@ -430,12 +759,16 @@ class InterviewService:
             interview_summary=summary_data,
         )
 
-        # Enforce authoritative database metadata on report output
-        if "candidate" in report and isinstance(report["candidate"], dict):
-            if candidate and candidate.full_name:
-                report["candidate"]["name"] = candidate.full_name
-            if job and job.title:
-                report["candidate"]["target_role"] = job.title
+        # Enforce authoritative database metadata on report output and narrative sections
+        report = InterviewService.harmonize_report_narratives(
+            report=report,
+            candidate_name=candidate.full_name if (candidate and candidate.full_name) else None,
+            job_title=job.title if (job and job.title) else None,
+            company=job.company if (job and job.company) else None,
+            stale_titles=stale_titles,
+            stale_names=stale_names,
+            stale_companies=stale_companies,
+        )
 
         # Enforce provisional metadata & score adjustments on report output
         scores = report.setdefault("scores", {})

@@ -67,7 +67,7 @@ IMPORTANT RULES:
 9. Return ONLY valid JSON.
 10. Do not use markdown.
 11. Do not use code fences.
-12. The candidate name and target role specified in the candidate resume and target job description are authoritative; you must populate candidate.name and candidate.target_role directly from them.
+12. The candidate name, target role, and company specified in the inputs are authoritative. You must populate candidate.name and candidate.target_role directly from them, and ensure all narrative sections (including candidate_summary, executive_summary, and resume_evaluation.summary) strictly reference the authoritative candidate name and target role, never substituting generic or alternative job titles.
 
 Generate a final decision using one of:
 

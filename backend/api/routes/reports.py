@@ -59,6 +59,16 @@ def generate_report_endpoint(
             skill_gap=request.skill_gap,
             interview_summary=request.interview_summary,
         )
+        req_title = request.job_description.get("job_title") or request.job_description.get("title")
+        req_name = request.resume.get("name") or request.resume.get("candidate_name")
+        req_company = request.job_description.get("company")
+        if req_title or req_name:
+            report = InterviewService.harmonize_report_narratives(
+                report=report,
+                candidate_name=req_name,
+                job_title=req_title,
+                company=req_company,
+            )
     except ValueError as exc:
         logger.error("Agent 7 validation/generation failure: %s", exc)
         raise HTTPException(

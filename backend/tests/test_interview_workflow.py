@@ -3,6 +3,7 @@ Interview Workflow Service Tests.
 Tests stateful session transitions, Agent 5 generation, Agent 6 evaluation,
 progress tracking, final interview summary aggregation, and report generation.
 """
+import copy
 import json
 import pytest
 
@@ -519,4 +520,298 @@ def test_report_missing_or_invalid_evaluation_scores(
     # Only the valid score (80.0) is factored in
     assert prov["partial_interview_score"] == 80.0
     assert report_result["report_data"]["scores"]["interview_score"] == 80.0
+
+
+def test_database_job_title_overrides_stale_parsed_job_json(
+    monkeypatch, db_session, synthetic_resume, synthetic_match, synthetic_skill_gap, synthetic_summary, synthetic_report
+):
+    """Database job title must authoritatively override any stale parsed job JSON."""
+    stale_parsed_jd = {
+        "job_title": "Senior C++ Architect",
+        "title": "Senior C++ Architect",
+        "required_skills": ["C++", "Templates"],
+    }
+    candidate = repository.create_candidate(db_session, full_name="Alex Morgan", parsed_resume_data=synthetic_resume)
+    job = repository.create_job(
+        db_session,
+        title="Junior Python Developer",
+        company="TechNova Solutions",
+        description="Python API developer",
+        parsed_job_data=stale_parsed_jd,
+    )
+    analysis = repository.create_analysis_run(
+        db_session,
+        candidate_id=candidate.id,
+        job_id=job.id,
+        status="completed",
+        resume_parse_result=synthetic_resume,
+        job_parse_result=stale_parsed_jd,
+        match_result=synthetic_match,
+        skill_gap_result=synthetic_skill_gap,
+    )
+    session = repository.create_interview_session(
+        db_session, candidate_id=candidate.id, job_id=job.id, analysis_run_id=analysis.id, status="completed"
+    )
+    session.final_summary = synthetic_summary
+    db_session.commit()
+
+    mock_rep = copy.deepcopy(synthetic_report)
+    mock_rep["candidate"]["target_role"] = "Senior C++ Architect"
+    monkeypatch.setattr(hr_generator, "llm", MockLLM(json.dumps(mock_rep)))
+
+    report_result = InterviewService.generate_and_save_hiring_report(
+        db=db_session,
+        analysis_run_id=analysis.id,
+        interview_session_id=session.id,
+    )
+
+    report_data = report_result["report_data"]
+    assert report_data["candidate"]["target_role"] == "Junior Python Developer"
+    assert "Senior C++ Architect" not in report_data["candidate"]["target_role"]
+
+
+def test_candidate_summary_uses_authoritative_job_title(
+    monkeypatch, db_session, synthetic_resume, synthetic_jd, synthetic_match, synthetic_skill_gap, synthetic_summary, synthetic_report
+):
+    """Candidate summary narrative must reference authoritative job title and remove conflicting titles."""
+    candidate = repository.create_candidate(db_session, full_name="Alex Morgan", parsed_resume_data=synthetic_resume)
+    job = repository.create_job(db_session, title="Junior Python Developer", company="TechNova Solutions", description="Python development", parsed_job_data=synthetic_jd)
+    analysis = repository.create_analysis_run(
+        db_session,
+        candidate_id=candidate.id,
+        job_id=job.id,
+        status="completed",
+        resume_parse_result=synthetic_resume,
+        job_parse_result=synthetic_jd,
+        match_result=synthetic_match,
+        skill_gap_result=synthetic_skill_gap,
+    )
+    session = repository.create_interview_session(
+        db_session, candidate_id=candidate.id, job_id=job.id, analysis_run_id=analysis.id, status="completed"
+    )
+    session.final_summary = synthetic_summary
+    db_session.commit()
+
+    mock_rep = copy.deepcopy(synthetic_report)
+    # Simulate LLM outputting the exact observed issue:
+    mock_rep["candidate"]["candidate_summary"] = (
+        "The candidate is an excellent match for this entry-level Backend Developer position. "
+        "They possess all required technical skills and their experience level perfectly aligns with the job description."
+    )
+    monkeypatch.setattr(hr_generator, "llm", MockLLM(json.dumps(mock_rep)))
+
+    report_result = InterviewService.generate_and_save_hiring_report(
+        db=db_session,
+        analysis_run_id=analysis.id,
+        interview_session_id=session.id,
+    )
+
+    candidate_sec = report_result["report_data"]["candidate"]
+    assert "Junior Python Developer" in candidate_sec["candidate_summary"]
+    assert "Backend Developer" not in candidate_sec["candidate_summary"]
+    assert candidate_sec["name"] == "Alex Morgan"
+    assert candidate_sec["target_role"] == "Junior Python Developer"
+
+
+def test_executive_summary_uses_authoritative_job_title(
+    monkeypatch, db_session, synthetic_resume, synthetic_jd, synthetic_match, synthetic_skill_gap, synthetic_summary, synthetic_report
+):
+    """Executive summary narrative must reference authoritative candidate name and job title."""
+    candidate = repository.create_candidate(db_session, full_name="Alex Morgan", parsed_resume_data=synthetic_resume)
+    job = repository.create_job(db_session, title="Junior Python Developer", company="TechNova Solutions", description="Python development", parsed_job_data=synthetic_jd)
+    analysis = repository.create_analysis_run(
+        db_session,
+        candidate_id=candidate.id,
+        job_id=job.id,
+        status="completed",
+        resume_parse_result=synthetic_resume,
+        job_parse_result=synthetic_jd,
+        match_result=synthetic_match,
+        skill_gap_result=synthetic_skill_gap,
+    )
+    session = repository.create_interview_session(
+        db_session, candidate_id=candidate.id, job_id=job.id, analysis_run_id=analysis.id, status="completed"
+    )
+    session.final_summary = synthetic_summary
+    db_session.commit()
+
+    mock_rep = copy.deepcopy(synthetic_report)
+    mock_rep["executive_summary"] = (
+        "The candidate presents an exceptionally strong resume for the entry-level Backend Developer role, "
+        "demonstrating a 94% ATS match with all required technical skills and a perfect experience alignment."
+    )
+    monkeypatch.setattr(hr_generator, "llm", MockLLM(json.dumps(mock_rep)))
+
+    report_result = InterviewService.generate_and_save_hiring_report(
+        db=db_session,
+        analysis_run_id=analysis.id,
+        interview_session_id=session.id,
+    )
+
+    exec_summary = report_result["report_data"]["executive_summary"]
+    assert "Junior Python Developer" in exec_summary
+    assert "Alex Morgan" in exec_summary
+    assert "Backend Developer" not in exec_summary
+
+
+def test_conflicting_generic_titles_do_not_appear_in_generated_narrative_fields(
+    monkeypatch, db_session, synthetic_resume, synthetic_jd, synthetic_match, synthetic_skill_gap, synthetic_summary, synthetic_report
+):
+    """Conflicting generic titles like Backend Developer or Software Engineer must not appear across narrative fields."""
+    candidate = repository.create_candidate(db_session, full_name="Alex Morgan", parsed_resume_data=synthetic_resume)
+    job = repository.create_job(db_session, title="Junior Python Developer", company="TechNova Solutions", description="Python development", parsed_job_data=synthetic_jd)
+    analysis = repository.create_analysis_run(
+        db_session,
+        candidate_id=candidate.id,
+        job_id=job.id,
+        status="completed",
+        resume_parse_result=synthetic_resume,
+        job_parse_result=synthetic_jd,
+        match_result=synthetic_match,
+        skill_gap_result=synthetic_skill_gap,
+    )
+    session = repository.create_interview_session(
+        db_session, candidate_id=candidate.id, job_id=job.id, analysis_run_id=analysis.id, status="completed"
+    )
+    session.final_summary = synthetic_summary
+    db_session.commit()
+
+    mock_rep = copy.deepcopy(synthetic_report)
+    mock_rep["candidate"]["candidate_summary"] = "Match for entry-level Backend Developer position."
+    mock_rep["executive_summary"] = "Ideal match for Backend Developer role."
+    mock_rep["resume_evaluation"]["summary"] = "Foundational match for Backend Developer position."
+    mock_rep["resume_evaluation"]["key_strengths"] = ["Strong fit for Backend Developer role."]
+    mock_rep["final_decision"]["reasoning"] = "Candidate is qualified for the Backend Developer position."
+    mock_rep["key_reasons_to_hire"] = ["Meets requirements for Software Engineer job."]
+    monkeypatch.setattr(hr_generator, "llm", MockLLM(json.dumps(mock_rep)))
+
+    report_result = InterviewService.generate_and_save_hiring_report(
+        db=db_session,
+        analysis_run_id=analysis.id,
+        interview_session_id=session.id,
+    )
+
+    data = report_result["report_data"]
+    # Verify candidate_summary
+    assert "Junior Python Developer" in data["candidate"]["candidate_summary"]
+    assert "Backend Developer" not in data["candidate"]["candidate_summary"]
+
+    # Verify executive_summary
+    assert "Junior Python Developer" in data["executive_summary"]
+    assert "Backend Developer" not in data["executive_summary"]
+
+    # Verify resume summary
+    assert "Junior Python Developer" in data["resume_evaluation"]["summary"]
+    assert "Backend Developer" not in data["resume_evaluation"]["summary"]
+
+    # Verify key_strengths
+    for s in data["resume_evaluation"]["key_strengths"]:
+        assert "Backend Developer" not in s
+
+    # Verify final_decision reasoning
+    assert "Junior Python Developer" in data["final_decision"]["reasoning"]
+    assert "Backend Developer" not in data["final_decision"]["reasoning"]
+
+    # Verify key_reasons_to_hire
+    for r in data["key_reasons_to_hire"]:
+        assert "Software Engineer" not in r
+
+
+def test_provisional_reports_remain_provisional_when_interview_incomplete(
+    monkeypatch, db_session, synthetic_resume, synthetic_jd, synthetic_match, synthetic_skill_gap, synthetic_report
+):
+    """Provisional reports must remain provisional with correct scores and keep session open."""
+    candidate = repository.create_candidate(db_session, full_name="Alex Morgan", parsed_resume_data=synthetic_resume)
+    job = repository.create_job(db_session, title="Junior Python Developer", company="TechNova Solutions", description="Python development", parsed_job_data=synthetic_jd)
+    analysis = repository.create_analysis_run(
+        db_session,
+        candidate_id=candidate.id,
+        job_id=job.id,
+        status="completed",
+        resume_parse_result=synthetic_resume,
+        job_parse_result=synthetic_jd,
+        match_result=synthetic_match,
+        skill_gap_result=synthetic_skill_gap,
+    )
+    session = repository.create_interview_session(
+        db_session, candidate_id=candidate.id, job_id=job.id, analysis_run_id=analysis.id, status="in_progress"
+    )
+    qs = repository.add_interview_questions(
+        db_session,
+        session.id,
+        [
+            {"id": f"Q{i}", "question": f"Question {i}", "category": "Tech", "difficulty": "medium"}
+            for i in range(1, 6)
+        ],
+    )
+    repository.save_interview_answer(
+        db_session, question_id=qs[0].id, answer_text="Answer 1", evaluation_result={"score": 85}, score=85.0
+    )
+
+    mock_rep = copy.deepcopy(synthetic_report)
+    mock_rep["candidate"]["candidate_summary"] = "The candidate is an excellent match for this entry-level Backend Developer position."
+    monkeypatch.setattr(hr_generator, "llm", MockLLM(json.dumps(mock_rep)))
+
+    report_result = InterviewService.generate_and_save_hiring_report(
+        db=db_session,
+        analysis_run_id=analysis.id,
+        interview_session_id=session.id,
+    )
+
+    assert report_result["is_provisional"] is True
+    assert report_result["report_data"]["is_provisional"] is True
+    prov = report_result["report_data"]["provisional_details"]
+    assert prov["partial_interview_score"] == 85.0
+    assert prov["session_status"] == "in_progress"
+
+    # Session remains in_progress
+    refetched_session = repository.get_interview_session(db_session, session.id)
+    assert refetched_session.status == "in_progress"
+    assert refetched_session.completed_at is None
+
+    # Narrative consistency
+    assert "Junior Python Developer" in report_result["report_data"]["candidate"]["candidate_summary"]
+    assert "Backend Developer" not in report_result["report_data"]["candidate"]["candidate_summary"]
+
+
+def test_completed_interview_reports_continue_using_final_interview_summary(
+    monkeypatch, db_session, synthetic_resume, synthetic_jd, synthetic_match, synthetic_skill_gap, synthetic_summary, synthetic_report
+):
+    """Completed interview sessions must generate final non-provisional reports using final_summary."""
+    candidate = repository.create_candidate(db_session, full_name="Alex Morgan", parsed_resume_data=synthetic_resume)
+    job = repository.create_job(db_session, title="Junior Python Developer", company="TechNova Solutions", description="Python development", parsed_job_data=synthetic_jd)
+    analysis = repository.create_analysis_run(
+        db_session,
+        candidate_id=candidate.id,
+        job_id=job.id,
+        status="completed",
+        resume_parse_result=synthetic_resume,
+        job_parse_result=synthetic_jd,
+        match_result=synthetic_match,
+        skill_gap_result=synthetic_skill_gap,
+    )
+    session = repository.create_interview_session(
+        db_session, candidate_id=candidate.id, job_id=job.id, analysis_run_id=analysis.id, status="completed"
+    )
+    completed_summary = dict(synthetic_summary)
+    completed_summary["overall_interview_score"] = 92.0
+    session.final_summary = completed_summary
+    db_session.commit()
+
+    mock_rep = copy.deepcopy(synthetic_report)
+    mock_rep["scores"]["interview_score"] = 92.0
+    monkeypatch.setattr(hr_generator, "llm", MockLLM(json.dumps(mock_rep)))
+
+    report_result = InterviewService.generate_and_save_hiring_report(
+        db=db_session,
+        analysis_run_id=analysis.id,
+        interview_session_id=session.id,
+    )
+
+    assert report_result["is_provisional"] is False
+    assert report_result["report_data"]["is_provisional"] is False
+    assert report_result["report_data"]["candidate"]["name"] == "Alex Morgan"
+    assert report_result["report_data"]["candidate"]["target_role"] == "Junior Python Developer"
+    assert report_result["report_data"]["scores"]["interview_score"] == 92.0
+
 

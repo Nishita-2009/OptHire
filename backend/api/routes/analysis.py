@@ -61,24 +61,34 @@ def create_analysis_endpoint(
 
     resume_data = dict(candidate.parsed_resume_data or {})
     if candidate.full_name:
-        resume_data.setdefault("name", candidate.full_name)
-        resume_data.setdefault("candidate_name", candidate.full_name)
+        resume_data["name"] = candidate.full_name
+        resume_data["candidate_name"] = candidate.full_name
 
     job_data = dict(job.parsed_job_data or {})
     if job.title:
-        job_data.setdefault("job_title", job.title)
-        job_data.setdefault("title", job.title)
+        job_data["job_title"] = job.title
+        job_data["title"] = job.title
     if job.company:
-        job_data.setdefault("company", job.company)
+        job_data["company"] = job.company
 
     # Parse JD if not already parsed
     if not job.parsed_job_data and job.description:
         try:
             parsed_jd = parse_job_description(job.description)
+            if job.title:
+                parsed_jd["job_title"] = job.title
+                parsed_jd["title"] = job.title
+            if job.company:
+                parsed_jd["company"] = job.company
             job.parsed_job_data = parsed_jd
             db.commit()
             for k, v in parsed_jd.items():
                 job_data.setdefault(k, v)
+            if job.title:
+                job_data["job_title"] = job.title
+                job_data["title"] = job.title
+            if job.company:
+                job_data["company"] = job.company
         except Exception as exc:
             logger.warning("Could not auto-parse job description for analysis %s: %s", analysis.id, exc)
 

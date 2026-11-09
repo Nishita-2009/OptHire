@@ -37,13 +37,19 @@ def create_candidate_endpoint(
     db: Session = Depends(get_db),
 ) -> CandidateResponse:
     try:
+        parsed_resume = payload.parsed_resume_data
+        if parsed_resume and payload.full_name:
+            parsed_resume = dict(parsed_resume)
+            parsed_resume["name"] = payload.full_name
+            parsed_resume["candidate_name"] = payload.full_name
+
         candidate = repository.create_candidate(
             db=db,
             full_name=payload.full_name,
             email=payload.email,
             phone=payload.phone,
             resume_text=payload.resume_text,
-            parsed_resume_data=payload.parsed_resume_data,
+            parsed_resume_data=parsed_resume,
         )
         return CandidateResponse.model_validate(candidate)
     except Exception as exc:
