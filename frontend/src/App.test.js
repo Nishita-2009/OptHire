@@ -19,13 +19,25 @@ test('api client exposes standard endpoints and base URL', () => {
   expect(API_BASE_URL).toBeDefined();
   expect(typeof api.getHealth).toBe('function');
   expect(typeof api.getCandidates).toBe('function');
+  expect(typeof api.getCandidate).toBe('function');
   expect(typeof api.createCandidate).toBe('function');
+  expect(typeof api.uploadResume).toBe('function');
+  expect(typeof api.parseResume).toBe('function');
+  expect(typeof api.getCandidateAnalyses).toBe('function');
   expect(typeof api.getJobs).toBe('function');
   expect(typeof api.createJob).toBe('function');
+  expect(typeof api.parseJobDescription).toBe('function');
   expect(typeof api.createAnalysis).toBe('function');
+  expect(typeof api.getAnalysis).toBe('function');
   expect(typeof api.createInterviewSession).toBe('function');
+  expect(typeof api.getInterviewSession).toBe('function');
+  expect(typeof api.getInterviewQuestions).toBe('function');
+  expect(typeof api.getInterviewAnswers).toBe('function');
   expect(typeof api.submitInterviewAnswer).toBe('function');
+  expect(typeof api.finalizeInterview).toBe('function');
+  expect(typeof api.completeInterview).toBe('function');
   expect(typeof api.createReport).toBe('function');
+  expect(typeof api.getReport).toBe('function');
 });
 
 test('ApiError encapsulates status and payload message', () => {

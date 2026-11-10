@@ -23,7 +23,7 @@ export function TopNav() {
       try {
         const res = await api.getHealth();
         if (isMounted) {
-          if (res && res.status === 'healthy') {
+          if (res && (res.status === 'healthy' || res.status === 'ok')) {
             setBackendHealth({ status: 'healthy', message: 'Backend Connected' });
           } else {
             setBackendHealth({ status: 'degraded', message: 'Degraded' });
@@ -115,3 +115,4 @@ export function TopNav() {
 }
 
 export default TopNav;
+

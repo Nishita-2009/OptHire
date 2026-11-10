@@ -101,8 +101,8 @@ export function SettingsPage() {
             <div style={{ padding: '1rem', backgroundColor: 'var(--neutral-50)', borderRadius: 'var(--radius-md)' }}>
               <small style={{ color: 'var(--text-muted)', fontWeight: 600 }}>STATUS</small>
               <div style={{ marginTop: '0.25rem' }}>
-                <Badge variant={healthData?.status === 'healthy' ? 'success' : 'danger'}>
-                  {healthData?.status === 'healthy' ? 'CONNECTED (HEALTHY)' : 'DISCONNECTED'}
+                <Badge variant={healthData?.status === 'healthy' || healthData?.status === 'ok' ? 'success' : 'danger'}>
+                  {healthData?.status === 'healthy' || healthData?.status === 'ok' ? 'CONNECTED (HEALTHY)' : 'DISCONNECTED'}
                 </Badge>
               </div>
             </div>

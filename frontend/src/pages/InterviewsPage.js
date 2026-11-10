@@ -126,8 +126,9 @@ export function InterviewsPage() {
       notify.info('Agent 6 (Interview Evaluator) is evaluating your answer...');
       const evalRes = await api.submitInterviewAnswer(activeSessionId, selectedQuestion.id, answerText.trim());
 
-      setLatestEvaluation(evalRes.evaluation);
-      notify.success(`Answer evaluated! Score: ${evalRes.score}/100 (${evalRes.evaluation?.rating || 'Evaluated'})`);
+      const evalResult = evalRes.evaluation_result || evalRes.evaluation || {};
+      setLatestEvaluation(evalResult);
+      notify.success(`Answer evaluated! Score: ${evalRes.score}/100 (${evalResult.rating || 'Evaluated'})`);
       setAnswerText('');
 
       // Refresh session
@@ -145,7 +146,8 @@ export function InterviewsPage() {
       setFinalizing(true);
       notify.info('Synthesizing final interview evaluation via Agent 6...');
       const completed = await api.finalizeInterview(activeSessionId);
-      setSessionData(completed);
+      setSessionData((prev) => ({ ...prev, ...completed, status: 'completed' }));
+      await fetchSession(activeSessionId);
       notify.success('Interview session successfully finalized!');
     } catch (err) {
       notify.error(err.message);

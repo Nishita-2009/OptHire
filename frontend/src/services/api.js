@@ -110,14 +110,23 @@ export const api = {
   uploadResume: (file) => {
     const formData = new FormData();
     formData.append("file", file);
-    return request("/api/v1/candidates/upload-resume", {
+    return request("/api/v1/resumes/parse", {
+      method: "POST",
+      body: formData,
+    });
+  },
+
+  parseResume: (file) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    return request("/api/v1/resumes/parse", {
       method: "POST",
       body: formData,
     });
   },
 
   getCandidateAnalyses: (candidateId) =>
-    request(`/api/v1/candidates/${encodeURIComponent(candidateId)}/analyses`),
+    request(`/api/v1/candidates/${encodeURIComponent(candidateId)}/analysis`),
 
   // Jobs
   getJobs: (skip = 0, limit = 50) =>
@@ -161,6 +170,12 @@ export const api = {
   getInterviewSession: (id) =>
     request(`/api/v1/interviews/${encodeURIComponent(id)}`),
 
+  getInterviewQuestions: (sessionId) =>
+    request(`/api/v1/interviews/${encodeURIComponent(sessionId)}/questions`),
+
+  getInterviewAnswers: (sessionId) =>
+    request(`/api/v1/interviews/${encodeURIComponent(sessionId)}/answers`),
+
   submitInterviewAnswer: (sessionId, questionId, answerText) =>
     request(`/api/v1/interviews/${encodeURIComponent(sessionId)}/answers`, {
       method: "POST",
@@ -168,7 +183,12 @@ export const api = {
     }),
 
   finalizeInterview: (sessionId) =>
-    request(`/api/v1/interviews/${encodeURIComponent(sessionId)}/finalize`, {
+    request(`/api/v1/interviews/${encodeURIComponent(sessionId)}/complete`, {
+      method: "POST",
+    }),
+
+  completeInterview: (sessionId) =>
+    request(`/api/v1/interviews/${encodeURIComponent(sessionId)}/complete`, {
       method: "POST",
     }),
 
@@ -188,3 +208,4 @@ export const api = {
 
 export { ApiError, API_BASE_URL };
 export default api;
+
